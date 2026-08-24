@@ -59,10 +59,8 @@ source venv/bin/activate
 ### 3. Instalar dependencias
 
 ```bash
-pip install Django==6.0.8 psycopg-binary==3.3.4 python-decouple==3.8
+pip install -r requirements.txt
 ```
-
-> **Nota**: No existe un archivo `requirements.txt` en el proyecto. Las dependencias se listan arriba según lo instalado en el entorno virtual del proyecto.
 
 ### 4. Configurar las variables de entorno
 
@@ -151,11 +149,19 @@ python manage.py runserver
 ### Producción (resumen)
 
 1. Configure `DEBUG=False` en `.env`
-2. Configure `ALLOWED_HOSTS` en `config/settings.py` con su dominio
-3. Use un servidor WSGI como Gunicorn: `gunicorn config.wsgi:application`
-4. Configure un proxy inverso (Nginx) frente a Gunicorn
-5. Sirva archivos estáticos con `python manage.py collectstatic`
-6. Use HTTPS en producción
+2. Configure `ALLOWED_HOSTS` en `.env` con su dominio (ej: `ALLOWED_HOSTS=midominio.com,www.midominio.com`)
+3. Configure `SECRET_KEY` única y segura en `.env`
+4. Use un servidor WSGI como Gunicorn: `gunicorn config.wsgi:application`
+5. Configure un proxy inverso (Nginx) frente a Gunicorn con HTTPS
+6. Sirva archivos estáticos con `python manage.py collectstatic`
+7. Las siguientes configuraciones de seguridad se activan automáticamente cuando `DEBUG=False`:
+   - `SECURE_SSL_REDIRECT=True`
+   - `SESSION_COOKIE_SECURE=True`
+   - `CSRF_COOKIE_SECURE=True`
+   - `SECURE_HSTS_SECONDS=31536000`
+   - `SECURE_HSTS_INCLUDE_SUBDOMAINS=True`
+   - `SECURE_HSTS_PRELOAD=True`
+   - `SECURE_REFERRER_POLICY='strict-origin-when-cross-origin'`
 
 ## Módulos / Funcionalidades
 
@@ -317,11 +323,11 @@ python manage.py collectstatic
 1. **Base de datos**: Debe tener PostgreSQL instalado y accesible. Cree la base de datos y usuario antes de migrar.
 2. **Variables de entorno**: El archivo `.env` **no se versiona**. Cada entorno necesita su propio `.env` con credenciales válidas.
 3. **SECRET_KEY**: Genere una nueva clave secreta para producción (`django-insecure-` + string aleatoria).
-4. **DEBUG**: En producción **siempre** `DEBUG=False` y configure `ALLOWED_HOSTS` en `config/settings.py`.
+4. **DEBUG**: En producción **siempre** `DEBUG=False`. `ALLOWED_HOSTS` se configura via variable de entorno `ALLOWED_HOSTS` (default: `localhost,127.0.0.1`).
 5. **Zona horaria**: El proyecto usa `America/Lima`. Ajuste en `settings.py` si está en otra zona.
 6. **Archivos estáticos**: En producción ejecute `collectstatic` y configure su servidor web (Nginx/Apache) para servirlos.
 7. **Permisos de archivos**: Asegúrese de que el usuario que ejecuta la app tenga permisos de escritura en la carpeta del proyecto (para logs, media si se usa, etc.).
-8. **Dependencias**: No hay `requirements.txt`. Instale manualmente: `Django==6.0.8`, `psycopg-binary==3.3.4`, `python-decouple==3.8`.
+8. **Dependencias**: Instale con `pip install -r requirements.txt`.
 9. **Puerto por defecto**: `runserver` usa el 8000. Cambie con `python manage.py runserver 0.0.0.0:8000` para acceso en red local.
 
 ## Licencia
