@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}Mesas | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-texto">
+        <h1>Mesas</h1>
+        <p class="page-header-desc">Gestiona rápidamente el estado de las mesas del restaurante.</p>
+    </div>
+    {% if es_administrador %}
+        <div class="page-header-actions">
+            <a href="{% url 'crear_mesa' %}" class="btn btn-primary">+ Nueva mesa</a>
+        </div>
+    {% endif %}
+</div>
+
+{% if mesas_info %}
+    <section class="resumen-mesas" aria-label="Resumen del estado de las mesas">
+        <div class="resumen-card resumen-activas">
+            <span class="resumen-valor">{{ resumen.activas }}</span>
+            <span class="resumen-etiqueta">Mesas activas</span>
+        </div>
+        <div class="resumen-card resumen-libre">
+            <span class="resumen-valor">{{ resumen.libres }}</span>
+            <span class="resumen-etiqueta">Libres</span>
+        </div>
+        <div class="resumen-card resumen-ocupada">
+            <span class="resumen-valor">{{ resumen.ocupadas }}</span>
+            <span class="resumen-etiqueta">Ocupadas</span>
+        </div>
+        <div class="resumen-card resumen-reservada">
+            <span class="resumen-valor">{{ resumen.reservadas }}</span>
+            <span class="resumen-etiqueta">Reservadas</span>
+        </div>
+    </section>
+
+    <div class="mesas-grid">
+        {% for item in mesas_info %}
+            <div class="mesa-card mesa-estado-{{ item.mesa.estado|lower }}">
+                <div class="mesa-card-header">
+                    <span class="mesa-numero">Mesa {{ item.mesa.numero }}</span>
+                    <span class="estado-badge estado-{{ item.mesa.estado|lower }}">{{ item.mesa.get_estado_display }}</span>
+                </div>
+
+                <div class="mesa-card-body">
+                    <span class="mesa-capacidad">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        {{ item.mesa.capacidad }} personas
+                    </span>
+
+                    {% if item.pedido %}
+                        <div class="mesa-dato mesa-dato-pedido">
+                            <span class="mesa-dato-label">Pedido #{{ item.pedido.pk }}</span>
+                            <span class="mesa-dato-total">S/ {{ item.pedido.total|floatformat:"2u" }}</span>
+                        </div>
+                    {% elif item.reserva %}
+                        <div class="mesa-dato mesa-dato-reserva">
+                            <span class="mesa-dato-label">{{ item.reserva.cliente.nombres }} {{ item.reserva.cliente.apellidos }}</span>
+                            <span class="mesa-dato-total">{{ item.reserva.cantidad_personas }} personas · {{ item.reserva.fecha_hora|date:'g:i a' }}</span>
+                        </div>
+                    {% else %}
+                        <span class="mesa-disponible">{% if item.mesa.estado == 'FUERA_SERVICIO' %}No disponible{% else %}Lista para recibir comensales{% endif %}</span>
+                    {% endif %}
+                </div>
+
+                <div class="mesa-card-footer">
+                    {% if item.mesa.estado == 'LIBRE' %}
+                        <a href="{% url 'crear_pedido' %}?mesa={{ item.mesa.pk }}" class="btn btn-primary mesa-accion">Nuevo pedido</a>
+                    {% elif item.mesa.estado == 'OCUPADA' and item.pedido %}
+                        <a href="{% url 'detalle_pedido' item.pedido.pk %}" class="btn btn-primary mesa-accion">Ver pedido</a>
+                    {% elif item.mesa.estado == 'RESERVADA' and item.reserva %}
+                        <a href="{% url 'detalle_reserva' item.reserva.pk %}" class="btn btn-secondary mesa-accion">Ver reserva</a>
+                    {% endif %}
+                    {% if es_administrador %}
+                        <a href="{% url 'editar_mesa' item.mesa.pk %}" class="btn btn-secondary btn-small mesa-accion">Editar</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="empty">No hay mesas registradas todavía.</p>
+{% endif %}
+{% endblock %}

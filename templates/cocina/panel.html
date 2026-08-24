@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Panel de cocina | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Panel de cocina</h1>
+    <p class="help-text">Actualizado a las {{ hora_actual|date:'H:i' }}</p>
+</div>
+
+<div class="cocina-columnas">
+    <section class="cocina-columna columna-nuevos">
+        <h2>Nuevos pedidos <span class="kds-contador">{{ pedidos_abiertos|length }}</span></h2>
+        <p class="help-text">Al comenzar se descontarán automáticamente los ingredientes.</p>
+        {% for pedido in pedidos_abiertos %}
+            <article class="pedido-tarjeta">
+                <div class="pedido-tarjeta-header">
+                    <span class="pedido-numero">Pedido {{ pedido.id }}</span>
+                    <span class="pedido-mesa">Mesa {{ pedido.mesa.numero }}</span>
+                </div>
+                <div class="pedido-tarjeta-meta">
+                    <p><strong>Hora:</strong> {{ pedido.fecha_creacion|date:'H:i' }}</p>
+                    <p><strong>Tiempo:</strong> <span class="tiempo-transcurrido" data-fecha="{{ pedido.fecha_creacion|date:'c' }}">{{ pedido.fecha_creacion|timesince }}</span></p>
+                    <p><strong>Mesero:</strong> {{ pedido.mesero.get_full_name|default:pedido.mesero.username }}</p>
+                </div>
+                {% if pedido.observacion %}
+                    <p class="pedido-observacion"><strong>Observación:</strong> {{ pedido.observacion }}</p>
+                {% endif %}
+                <ul class="pedido-productos">
+                    {% for detalle in pedido.detalles.all %}
+                        <li>
+                            <span class="pedido-cantidad">{{ detalle.cantidad }} x</span> {{ detalle.producto.nombre }}
+                            {% if detalle.observacion %}<br><small class="help-text">Nota: {{ detalle.observacion }}</small>{% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+                <form method="post" action="{% url 'actualizar_estado_cocina' pedido.pk %}" class="cocina-accion">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">Comenzar preparación</button>
+                </form>
+            </article>
+        {% empty %}
+            <p class="empty">No hay pedidos nuevos.</p>
+        {% endfor %}
+    </section>
+
+    <section class="cocina-columna columna-preparacion">
+        <h2>En preparación <span class="kds-contador">{{ pedidos_en_preparacion|length }}</span></h2>
+        {% for pedido in pedidos_en_preparacion %}
+            <article class="pedido-tarjeta">
+                <div class="pedido-tarjeta-header">
+                    <span class="pedido-numero">Pedido {{ pedido.id }}</span>
+                    <span class="pedido-mesa">Mesa {{ pedido.mesa.numero }}</span>
+                </div>
+                <div class="pedido-tarjeta-meta">
+                    <p><strong>Hora:</strong> {{ pedido.fecha_creacion|date:'H:i' }}</p>
+                    <p><strong>Tiempo:</strong> <span class="tiempo-transcurrido" data-fecha="{{ pedido.fecha_creacion|date:'c' }}">{{ pedido.fecha_creacion|timesince }}</span></p>
+                    <p><strong>Mesero:</strong> {{ pedido.mesero.get_full_name|default:pedido.mesero.username }}</p>
+                </div>
+                {% if pedido.observacion %}
+                    <p class="pedido-observacion"><strong>Observación:</strong> {{ pedido.observacion }}</p>
+                {% endif %}
+                <ul class="pedido-productos">
+                    {% for detalle in pedido.detalles.all %}
+                        <li>
+                            <span class="pedido-cantidad">{{ detalle.cantidad }} x</span> {{ detalle.producto.nombre }}
+                            {% if detalle.observacion %}<br><small class="help-text">Nota: {{ detalle.observacion }}</small>{% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+                <form method="post" action="{% url 'actualizar_estado_cocina' pedido.pk %}" class="cocina-accion">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">Marcar como listo</button>
+                </form>
+            </article>
+        {% empty %}
+            <p class="empty">No hay pedidos en preparación.</p>
+        {% endfor %}
+    </section>
+
+    <section class="cocina-columna columna-listos">
+        <h2>Listos <span class="kds-contador">{{ pedidos_listos|length }}</span></h2>
+        {% for pedido in pedidos_listos %}
+            <article class="pedido-tarjeta">
+                <div class="pedido-tarjeta-header">
+                    <span class="pedido-numero">Pedido {{ pedido.id }}</span>
+                    <span class="pedido-mesa">Mesa {{ pedido.mesa.numero }}</span>
+                </div>
+                <div class="pedido-tarjeta-meta">
+                    <p><strong>Hora:</strong> {{ pedido.fecha_creacion|date:'H:i' }}</p>
+                    <p><strong>Tiempo:</strong> <span class="tiempo-transcurrido" data-fecha="{{ pedido.fecha_creacion|date:'c' }}">{{ pedido.fecha_creacion|timesince }}</span></p>
+                    <p><strong>Mesero:</strong> {{ pedido.mesero.get_full_name|default:pedido.mesero.username }}</p>
+                </div>
+                {% if pedido.observacion %}
+                    <p class="pedido-observacion"><strong>Observación:</strong> {{ pedido.observacion }}</p>
+                {% endif %}
+                <ul class="pedido-productos">
+                    {% for detalle in pedido.detalles.all %}
+                        <li>
+                            <span class="pedido-cantidad">{{ detalle.cantidad }} x</span> {{ detalle.producto.nombre }}
+                            {% if detalle.observacion %}<br><small class="help-text">Nota: {{ detalle.observacion }}</small>{% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+                <span class="estado-badge estado-pedido-listo cocina-espera">Esperando entrega</span>
+            </article>
+        {% empty %}
+            <p class="empty">No hay pedidos listos.</p>
+        {% endfor %}
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/cocina.js' %}"></script>
+{% endblock %}

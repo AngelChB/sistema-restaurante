@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Compras | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Compras</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'lista_proveedores' %}" class="btn btn-secondary">Proveedores</a>
+        {% if puede_gestionar_compras %}
+            <a href="{% url 'crear_compra' %}" class="btn btn-primary">Nueva compra</a>
+        {% endif %}
+    </div>
+</div>
+
+<form method="get" action="{% url 'lista_compras' %}" class="filter-bar">
+    <input type="text" name="buscar" value="{{ buscar }}" placeholder="Buscar por documento o proveedor..." class="form-input filter-buscar">
+    <select name="estado" class="form-input filter-select">
+        <option value="">Todos los estados</option>
+        {% for valor, etiqueta in estados %}
+            <option value="{{ valor }}" {% if estado == valor %}selected{% endif %}>{{ etiqueta }}</option>
+        {% endfor %}
+    </select>
+    <select name="proveedor" class="form-input filter-select">
+        <option value="">Todos los proveedores</option>
+        {% for proveedor in proveedores %}
+            <option value="{{ proveedor.pk }}" {% if proveedor_id == proveedor.pk|stringformat:'s' %}selected{% endif %}>{{ proveedor.razon_social }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-primary">Filtrar</button>
+</form>
+
+{% if compras %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>N°</th>
+                    <th>Documento</th>
+                    <th>Proveedor</th>
+                    <th>Fecha documento</th>
+                    <th>Estado</th>
+                    <th>Total</th>
+                    <th>Registrado por</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for compra in compras %}
+                    <tr>
+                        <td>{{ compra.pk }}</td>
+                        <td>{{ compra.numero_documento|default:'—' }}</td>
+                        <td>{{ compra.proveedor.razon_social }}</td>
+                        <td>{{ compra.fecha_documento|date:'d/m/Y' }}</td>
+                        <td><span class="estado-badge estado-compra-{{ compra.estado|lower }}">{{ compra.get_estado_display }}</span></td>
+                        <td>S/ {{ compra.total|floatformat:"2u" }}</td>
+                        <td>{{ compra.usuario.get_full_name|default:compra.usuario.username }}</td>
+                        <td>
+                            <a href="{% url 'detalle_compra' compra.pk %}" class="btn btn-secondary btn-small">Ver</a>
+                            {% if puede_gestionar_compras and compra.estado == 'BORRADOR' %}
+                                <a href="{% url 'editar_compra' compra.pk %}" class="btn btn-secondary btn-small">Editar</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p class="empty">No se encontraron compras con los filtros aplicados.</p>
+{% endif %}
+{% endblock %}

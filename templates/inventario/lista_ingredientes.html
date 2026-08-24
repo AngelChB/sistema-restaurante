@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Ingredientes | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Ingredientes</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'historial_movimientos' %}" class="btn btn-secondary">Movimientos</a>
+        <a href="{% url 'lista_unidades' %}" class="btn btn-secondary">Unidades de medida</a>
+        {% if puede_gestionar_inventario %}
+            <a href="{% url 'registrar_movimiento' %}" class="btn btn-secondary">Registrar movimiento</a>
+            <a href="{% url 'crear_ingrediente' %}" class="btn btn-primary">Nuevo ingrediente</a>
+        {% endif %}
+    </div>
+</div>
+
+<form method="get" action="{% url 'lista_ingredientes' %}" class="filter-bar">
+    <input type="text" name="buscar" value="{{ buscar }}" placeholder="Buscar por nombre..." class="form-input filter-buscar">
+    <select name="unidad" class="form-input filter-select">
+        <option value="">Todas las unidades</option>
+        {% for unidad in unidades %}
+            <option value="{{ unidad.pk }}" {% if unidad_id == unidad.pk|stringformat:'s' %}selected{% endif %}>{{ unidad.nombre }}</option>
+        {% endfor %}
+    </select>
+    <select name="stock" class="form-input filter-select">
+        <option value="">Todos los estados</option>
+        <option value="bajo" {% if stock == 'bajo' %}selected{% endif %}>Bajo stock</option>
+        <option value="sin_stock" {% if stock == 'sin_stock' %}selected{% endif %}>Sin stock</option>
+        <option value="normal" {% if stock == 'normal' %}selected{% endif %}>Stock normal</option>
+    </select>
+    <button type="submit" class="btn btn-primary">Filtrar</button>
+</form>
+
+{% if ingredientes %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Ingrediente</th>
+                    <th>Unidad</th>
+                    <th>Stock actual</th>
+                    <th>Stock mínimo</th>
+                    <th>Costo unitario</th>
+                    <th>Valor</th>
+                    <th>Estado</th>
+                    {% if puede_gestionar_inventario %}<th>Acciones</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for ingrediente in ingredientes %}
+                    <tr>
+                        <td>{{ ingrediente.nombre }}</td>
+                        <td>{{ ingrediente.unidad_medida.abreviatura }}</td>
+                        <td>{{ ingrediente.stock_actual|floatformat:"3u" }}</td>
+                        <td>{{ ingrediente.stock_minimo|floatformat:"3u" }}</td>
+                        <td>S/ {{ ingrediente.costo_unitario|floatformat:"4u" }}</td>
+                        <td>S/ {{ ingrediente.valor|floatformat:"2u" }}</td>
+                        <td>
+                            {% if ingrediente.stock_actual == 0 %}
+                                <span class="stock-badge stock-sin-stock">Sin stock</span>
+                            {% elif ingrediente.bajo_stock %}
+                                <span class="stock-badge stock-bajo">Bajo stock</span>
+                            {% else %}
+                                <span class="stock-badge stock-normal">Stock normal</span>
+                            {% endif %}
+                        </td>
+                        {% if puede_gestionar_inventario %}
+                            <td>
+                                <a href="{% url 'editar_ingrediente' ingrediente.pk %}" class="btn btn-secondary btn-small">Editar</a>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p class="empty">No se encontraron ingredientes con los filtros aplicados.</p>
+{% endif %}
+{% endblock %}

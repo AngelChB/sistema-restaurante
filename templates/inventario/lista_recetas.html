@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Recetas | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Recetas</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'lista_ingredientes' %}" class="btn btn-secondary">Ingredientes</a>
+        {% if puede_gestionar_inventario %}
+            <a href="{% url 'crear_receta' %}" class="btn btn-primary">Agregar ingrediente</a>
+        {% endif %}
+    </div>
+</div>
+
+<form method="get" action="{% url 'lista_recetas' %}" class="filter-bar">
+    <input type="text" name="buscar" value="{{ buscar }}" placeholder="Buscar por producto..." class="form-input filter-buscar">
+    <select name="categoria" class="form-input filter-select">
+        <option value="">Todas las categorías</option>
+        {% for categoria in categorias %}
+            <option value="{{ categoria.pk }}" {% if categoria_id == categoria.pk|stringformat:'s' %}selected{% endif %}>{{ categoria.nombre }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-primary">Filtrar</button>
+</form>
+
+{% if productos_con_recetas %}
+    {% for grupo in productos_con_recetas %}
+        <div class="receta-grupo">
+            <div class="receta-grupo-header">
+                <div>
+                    <h2>{{ grupo.producto.nombre }}</h2>
+                    <span class="receta-grupo-categoria">{{ grupo.producto.categoria.nombre }}</span>
+                </div>
+                {% if puede_gestionar_inventario %}
+                    <a href="{% url 'crear_receta' %}" class="btn btn-secondary btn-small">Agregar ingrediente</a>
+                {% endif %}
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Ingrediente</th>
+                            <th>Cantidad</th>
+                            <th>Unidad</th>
+                            {% if puede_gestionar_inventario %}<th>Acciones</th>{% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for receta in grupo.items %}
+                            <tr>
+                                <td>{{ receta.ingrediente.nombre }}</td>
+                                <td>{{ receta.cantidad|floatformat:"3u" }}</td>
+                                <td>{{ receta.ingrediente.unidad_medida.abreviatura }}</td>
+                                {% if puede_gestionar_inventario %}
+                                    <td>
+                                        <a href="{% url 'editar_receta' receta.pk %}" class="btn btn-secondary btn-small">Editar</a>
+                                    </td>
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <p class="empty">No se encontraron recetas con los filtros aplicados.</p>
+{% endif %}
+{% endblock %}

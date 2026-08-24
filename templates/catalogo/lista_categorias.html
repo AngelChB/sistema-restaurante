@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Categorías | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Categorías</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'lista_productos' %}" class="btn btn-secondary">Volver a productos</a>
+        {% if es_administrador %}
+            <a href="{% url 'crear_categoria' %}" class="btn btn-primary">Nueva categoría</a>
+        {% endif %}
+    </div>
+</div>
+
+{% if categorias %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th>Estado</th>
+                    {% if es_administrador %}<th>Acciones</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for categoria in categorias %}
+                    <tr>
+                        <td>{{ categoria.nombre }}</td>
+                        <td>{{ categoria.descripcion|truncatechars:60 }}</td>
+                        <td>
+                            {% if categoria.activo %}
+                                <span class="estado-badge estado-libre">Activa</span>
+                            {% else %}
+                                <span class="estado-badge estado-fuera_servicio">Inactiva</span>
+                            {% endif %}
+                        </td>
+                        {% if es_administrador %}
+                            <td>
+                                <a href="{% url 'editar_categoria' categoria.pk %}" class="btn btn-secondary btn-small">Editar</a>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p class="empty">No existen categorías registradas.</p>
+{% endif %}
+{% endblock %}

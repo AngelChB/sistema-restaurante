@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pedidos listos para entregar | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Pedidos listos para entregar</h1>
+    <p class="help-text">Actualizado a las {{ hora_actual|date:'H:i' }}</p>
+</div>
+
+{% if pedidos %}
+    <div class="sala-grid">
+        {% for pedido in pedidos %}
+            <article class="pedido-tarjeta sala-tarjeta">
+                <div class="pedido-tarjeta-header">
+                    <span class="pedido-numero">Pedido {{ pedido.id }}</span>
+                    <span class="pedido-mesa">Mesa {{ pedido.mesa.numero }}</span>
+                </div>
+                <div class="pedido-tarjeta-meta">
+                    <p><strong>Mesero:</strong> {{ pedido.mesero.get_full_name|default:pedido.mesero.username }}</p>
+                    <p><strong>Hora:</strong> {{ pedido.fecha_creacion|date:'H:i' }}</p>
+                    <p><strong>Tiempo:</strong> <span class="tiempo-transcurrido" data-fecha="{{ pedido.fecha_creacion|date:'c' }}">{{ pedido.fecha_creacion|timesince }}</span></p>
+                </div>
+                {% if pedido.observacion %}
+                    <p class="pedido-observacion"><strong>Observación:</strong> {{ pedido.observacion }}</p>
+                {% endif %}
+                <ul class="pedido-productos">
+                    {% for detalle in pedido.detalles.all %}
+                        <li>
+                            <span class="pedido-cantidad">{{ detalle.cantidad }} x</span> {{ detalle.producto.nombre }}
+                            {% if detalle.observacion %}<br><small class="help-text">Nota: {{ detalle.observacion }}</small>{% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+                <div class="sala-acciones">
+                    <a href="{% url 'detalle_pedido' pedido.pk %}" class="btn btn-secondary">Ver detalle</a>
+                    <form method="post" action="{% url 'marcar_pedido_entregado' pedido.pk %}" class="sala-entregar">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary">Marcar como entregado</button>
+                    </form>
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="empty">No hay pedidos listos para entregar.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/sala.js' %}"></script>
+{% endblock %}

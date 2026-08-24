@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Productos | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Productos</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'lista_categorias' %}" class="btn btn-secondary">Ver categorías</a>
+        {% if es_administrador %}
+            <a href="{% url 'crear_producto' %}" class="btn btn-primary">Nuevo producto</a>
+        {% endif %}
+    </div>
+</div>
+
+<form method="get" action="{% url 'lista_productos' %}" class="filter-bar">
+    <input type="text" name="buscar" value="{{ buscar }}" placeholder="Buscar por nombre..." class="form-input filter-buscar">
+    <select name="categoria" class="form-input filter-select">
+        <option value="">Todas las categorías</option>
+        {% for categoria in categorias %}
+            <option value="{{ categoria.pk }}" {% if categoria_id == categoria.pk|stringformat:'s' %}selected{% endif %}>{{ categoria.nombre }}</option>
+        {% endfor %}
+    </select>
+    <select name="disponible" class="form-input filter-select">
+        <option value="">Todos</option>
+        <option value="1" {% if disponible == '1' %}selected{% endif %}>Disponibles</option>
+        <option value="0" {% if disponible == '0' %}selected{% endif %}>No disponibles</option>
+    </select>
+    <button type="submit" class="btn btn-primary">Filtrar</button>
+</form>
+
+{% if productos %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Categoría</th>
+                    <th>Descripción</th>
+                    <th>Precio</th>
+                    <th>Disponibilidad</th>
+                    {% if es_administrador %}<th>Acciones</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for producto in productos %}
+                    <tr>
+                        <td>{{ producto.nombre }}</td>
+                        <td>{{ producto.categoria.nombre }}</td>
+                        <td>{{ producto.descripcion|truncatechars:60 }}</td>
+                        <td>S/ {{ producto.precio|floatformat:"2u" }}</td>
+                        <td>
+                            {% if producto.disponible %}
+                                <span class="estado-badge estado-libre">Disponible</span>
+                            {% else %}
+                                <span class="estado-badge estado-fuera_servicio">No disponible</span>
+                            {% endif %}
+                        </td>
+                        {% if es_administrador %}
+                            <td>
+                                <a href="{% url 'editar_producto' producto.pk %}" class="btn btn-secondary btn-small">Editar</a>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p class="empty">No se encontraron productos con los filtros aplicados.</p>
+{% endif %}
+{% endblock %}

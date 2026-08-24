@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Unidades de medida | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Unidades de medida</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'lista_ingredientes' %}" class="btn btn-secondary">Ingredientes</a>
+        {% if puede_gestionar_inventario %}
+            <a href="{% url 'crear_unidad' %}" class="btn btn-primary">Nueva unidad</a>
+        {% endif %}
+    </div>
+</div>
+
+{% if unidades %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Abreviatura</th>
+                    <th>Estado</th>
+                    {% if puede_gestionar_inventario %}<th>Acciones</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for unidad in unidades %}
+                    <tr>
+                        <td>{{ unidad.nombre }}</td>
+                        <td>{{ unidad.abreviatura }}</td>
+                        <td>
+                            {% if unidad.activo %}
+                                <span class="estado-badge estado-libre">Activa</span>
+                            {% else %}
+                                <span class="estado-badge estado-fuera_servicio">Inactiva</span>
+                            {% endif %}
+                        </td>
+                        {% if puede_gestionar_inventario %}
+                            <td>
+                                <a href="{% url 'editar_unidad' unidad.pk %}" class="btn btn-secondary btn-small">Editar</a>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p class="empty">No hay unidades de medida registradas.</p>
+{% endif %}
+{% endblock %}

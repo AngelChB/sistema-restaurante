@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{{ titulo }}</h1>
+</div>
+
+<div class="form-card form-card-wide">
+    <form method="post" id="pedido-form" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="message message-error">
+                {% for error in form.non_field_errors %}
+                    {{ error }}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="form-section">
+            <h2>Datos del pedido</h2>
+            {% for field in form %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <ul class="error-list">
+                            {% for error in field.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="form-section">
+            <h2>Productos</h2>
+            {{ formset.management_form }}
+            {% if formset.non_form_errors %}
+                <div class="message message-error">
+                    {% for error in formset.non_form_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            <div id="detalle-formset">
+                {% for detalle_form in formset %}
+                    <div class="detalle-fila" data-prefix="{{ detalle_form.prefix }}">
+                        {{ detalle_form.id }}
+                        <div class="detalle-fila-fields">
+                            <div class="form-group">
+                                <label for="{{ detalle_form.producto.id_for_label }}">Producto</label>
+                                {{ detalle_form.producto }}
+                                {% for error in detalle_form.producto.errors %}
+                                    <p class="error-list">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                            <div class="form-group">
+                                <label for="{{ detalle_form.cantidad.id_for_label }}">Cantidad</label>
+                                {{ detalle_form.cantidad }}
+                                {% for error in detalle_form.cantidad.errors %}
+                                    <p class="error-list">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                            <div class="form-group">
+                                <label for="{{ detalle_form.observacion.id_for_label }}">Observación</label>
+                                {{ detalle_form.observacion }}
+                            </div>
+                        </div>
+                        <div class="detalle-fila-actions">
+                            <button type="button" class="btn btn-danger btn-small eliminar-fila">Eliminar</button>
+                            {% if detalle_form.instance.pk %}
+                                <span class="checkbox-delete">{{ detalle_form.DELETE }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <button type="button" class="btn btn-secondary" id="agregar-fila">Agregar producto</button>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Guardar pedido</button>
+            <a href="{% url 'lista_pedidos' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+<div id="fila-vacia" style="display:none">
+    <div class="detalle-fila">
+        {{ formset.empty_form.id }}
+        <div class="detalle-fila-fields">
+            <div class="form-group">
+                <label for="{{ formset.empty_form.producto.id_for_label }}">Producto</label>
+                {{ formset.empty_form.producto }}
+            </div>
+            <div class="form-group">
+                <label for="{{ formset.empty_form.cantidad.id_for_label }}">Cantidad</label>
+                {{ formset.empty_form.cantidad }}
+            </div>
+            <div class="form-group">
+                <label for="{{ formset.empty_form.observacion.id_for_label }}">Observación</label>
+                {{ formset.empty_form.observacion }}
+            </div>
+        </div>
+        <div class="detalle-fila-actions">
+            <button type="button" class="btn btn-danger btn-small eliminar-fila">Eliminar</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/pedidos.js' %}"></script>
+{% endblock %}

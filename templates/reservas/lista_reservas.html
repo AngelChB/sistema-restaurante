@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Reservas | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Reservas</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'lista_clientes' %}" class="btn btn-secondary">Clientes</a>
+        <a href="{% url 'crear_reserva' %}" class="btn btn-primary">Nueva reserva</a>
+    </div>
+</div>
+
+<form method="get" action="{% url 'lista_reservas' %}" class="filter-bar">
+    <input type="text" name="buscar" value="{{ buscar }}" placeholder="Buscar por cliente, teléfono o mesa..." class="form-input filter-buscar">
+    <select name="estado" class="form-input filter-select">
+        <option value="">Todos los estados</option>
+        {% for valor, etiqueta in estados %}
+            <option value="{{ valor }}" {% if estado == valor %}selected{% endif %}>{{ etiqueta }}</option>
+        {% endfor %}
+    </select>
+    <input type="date" name="fecha" value="{{ fecha }}" class="form-input filter-fecha">
+    <button type="submit" class="btn btn-primary">Filtrar</button>
+</form>
+
+{% if reservas %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>N°</th>
+                    <th>Fecha y hora</th>
+                    <th>Cliente</th>
+                    <th>Mesa</th>
+                    <th>Personas</th>
+                    <th>Estado</th>
+                    <th>Registrado por</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reserva in reservas %}
+                    <tr>
+                        <td>{{ reserva.pk }}</td>
+                        <td>{{ reserva.fecha_hora|date:'d/m/Y H:i' }}</td>
+                        <td>{{ reserva.cliente.nombres }} {{ reserva.cliente.apellidos }}</td>
+                        <td>Mesa {{ reserva.mesa.numero }}</td>
+                        <td>{{ reserva.cantidad_personas }}</td>
+                        <td><span class="estado-badge estado-reserva-{{ reserva.estado|lower }}">{{ reserva.get_estado_display }}</span></td>
+                        <td>{{ reserva.usuario.get_full_name|default:reserva.usuario.username }}</td>
+                        <td>
+                            <a href="{% url 'detalle_reserva' reserva.pk %}" class="btn btn-secondary btn-small">Ver</a>
+                            {% if reserva.estado == 'PENDIENTE' or reserva.estado == 'CONFIRMADA' %}
+                                <a href="{% url 'editar_reserva' reserva.pk %}" class="btn btn-secondary btn-small">Editar</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p class="empty">No se encontraron reservas con los filtros aplicados.</p>
+{% endif %}
+{% endblock %}

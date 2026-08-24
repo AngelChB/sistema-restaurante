@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Comprobante de pago {{ pago.id }} | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Comprobante de pago</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'panel_caja' %}" class="btn btn-secondary">Volver a caja</a>
+        <button type="button" class="btn btn-primary" onclick="window.print()">Imprimir</button>
+    </div>
+</div>
+
+<div class="comprobante">
+    <div class="comprobante-header">
+        <h2>Restaurante</h2>
+        <p class="help-text">Comprobante de pago N.º {{ pago.id }}</p>
+        <p class="help-text">{{ pago.fecha_pago|date:'d/m/Y H:i' }}</p>
+    </div>
+
+    <div class="detalle-info">
+        <div class="info-item"><span class="info-label">Pedido:</span> Pedido {{ pago.pedido.id }}</div>
+        <div class="info-item"><span class="info-label">Mesa:</span> {{ pago.pedido.mesa.numero }}</div>
+        <div class="info-item"><span class="info-label">Mesero:</span> {{ pago.pedido.mesero.get_full_name|default:pago.pedido.mesero.username }}</div>
+        <div class="info-item"><span class="info-label">Cajero:</span> {{ pago.cajero.get_full_name|default:pago.cajero.username }}</div>
+    </div>
+
+    <section class="section">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Precio unitario</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for detalle in pago.pedido.detalles.all %}
+                        <tr>
+                            <td>{{ detalle.producto.nombre }}</td>
+                            <td>{{ detalle.cantidad }}</td>
+                            <td>S/ {{ detalle.precio_unitario|floatformat:"2u" }}</td>
+                            <td>S/ {{ detalle.subtotal|floatformat:"2u" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" class="text-right"><strong>Total</strong></td>
+                        <td><strong>S/ {{ pago.pedido.total|floatformat:"2u" }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" class="text-right">Método de pago</td>
+                        <td>{{ pago.get_metodo_display }}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" class="text-right">Monto recibido</td>
+                        <td>{% if pago.monto_recibido %}S/ {{ pago.monto_recibido|floatformat:"2u" }}{% else %}—{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" class="text-right"><strong>Vuelto</strong></td>
+                        <td><strong>S/ {{ pago.vuelto|floatformat:"2u" }}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </section>
+
+    {% if pago.referencia %}
+        <p class="help-text"><strong>Referencia:</strong> {{ pago.referencia }}</p>
+    {% endif %}
+    {% if pago.observacion %}
+        <p class="help-text"><strong>Observación:</strong> {{ pago.observacion }}</p>
+    {% endif %}
+</div>
+{% endblock %}

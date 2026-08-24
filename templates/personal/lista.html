@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}Personal | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-texto">
+        <h1>Personal</h1>
+        <p class="page-header-desc">Gestiona los trabajadores del restaurante.</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="{% url 'crear_empleado' %}" class="btn btn-primary">+ Nuevo empleado</a>
+    </div>
+</div>
+
+<form method="get" action="{% url 'lista_empleados' %}" class="filter-bar">
+    <input type="text" name="buscar" value="{{ buscar }}" placeholder="Buscar por usuario, nombres, apellidos o correo..." class="form-input filter-buscar">
+    <select name="rol" class="form-input filter-select">
+        <option value="">Todos los roles</option>
+        {% for valor, etiqueta in roles %}
+            <option value="{{ valor }}" {% if rol == valor %}selected{% endif %}>{{ etiqueta }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-primary">Filtrar</button>
+</form>
+
+{% if usuarios %}
+    <div class="trabajador-grid">
+        {% for usuario in usuarios %}
+            <div class="trabajador-card">
+                <div class="trabajador-card-header">
+                    <div class="trabajador-avatar" aria-hidden="true">{{ usuario.get_full_name|default:usuario.username|slice:":1"|upper }}</div>
+                    <div class="trabajador-card-nombre">
+                        <span class="trabajador-nombre">{{ usuario.get_full_name|default:'—' }}</span>
+                        {% if usuario.perfil_empleado %}
+                            <span class="rol-badge rol-{{ usuario.perfil_empleado.rol|lower }}">{{ usuario.perfil_empleado.get_rol_display }}</span>
+                        {% else %}
+                            <span class="empty-inline">Sin perfil</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="trabajador-card-body">
+                    <span class="trabajador-usuario">Usuario: {{ usuario.username }}</span>
+                    <span class="trabajador-correo">{{ usuario.email|default:'—' }}</span>
+                    <div class="trabajador-badges">
+                        {% if usuario.is_superuser %}
+                            <span class="estado-badge estado-superusuario">Superusuario</span>
+                        {% elif usuario.is_staff %}
+                            <span class="estado-badge estado-staff">Staff</span>
+                        {% endif %}
+                        {% if usuario.is_active %}
+                            <span class="estado-badge estado-activo">Activo</span>
+                        {% else %}
+                            <span class="estado-badge estado-inactivo">Inactivo</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="trabajador-card-footer">
+                    <div class="trabajador-acciones">
+                        <a href="{% url 'editar_empleado' usuario.pk %}" class="btn btn-secondary btn-small">Editar</a>
+                        <a href="{% url 'cambiar_usuario_empleado' usuario.pk %}" class="btn btn-secondary btn-small">
+                            <svg class="btn-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            Cambiar usuario
+                        </a>
+                        <a href="{% url 'cambiar_password_empleado' usuario.pk %}" class="btn btn-secondary btn-small">
+                            <svg class="btn-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            Cambiar contraseña
+                        </a>
+                    </div>
+                    {% if usuario.is_active %}
+                        <form method="post" action="{% url 'alternar_estado_empleado' usuario.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-small" data-confirm="¿Desactivar a {{ usuario.get_full_name|default:usuario.username }}? El trabajador no podrá iniciar sesión, pero sus registros históricos se conservarán.">
+                                <svg class="btn-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                Desactivar
+                            </button>
+                        </form>
+                    {% else %}
+                        <form method="post" action="{% url 'alternar_estado_empleado' usuario.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary btn-small" data-confirm="¿Activar a {{ usuario.get_full_name|default:usuario.username }}? Podrá volver a iniciar sesión con su rol y registros actuales.">
+                                <svg class="btn-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+                                Activar
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="empty">No se encontraron empleados con los filtros aplicados.</p>
+{% endif %}
+{% endblock %}

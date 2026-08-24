@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block title %}Caja | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Panel de caja</h1>
+    <p class="help-text">Pagos del día {{ hoy|date:'d/m/Y' }}</p>
+    <div class="page-header-actions">
+        {% if cierre_del_dia %}
+            <a href="{% url 'detalle_cierre' cierre_del_dia.pk %}" class="btn btn-secondary">Ver cierre del día</a>
+        {% else %}
+            <a href="{% url 'cerrar_caja' %}" class="btn btn-primary">Cerrar caja</a>
+        {% endif %}
+    </div>
+</div>
+
+{% if cierre_del_dia %}
+    <div class="cierre-banner cierre-banner-cerrado">
+        <strong>Caja cerrada</strong>
+        <span>por {{ cierre_del_dia.responsable.get_full_name|default:cierre_del_dia.responsable.username }} a las {{ cierre_del_dia.fecha_cierre|date:'H:i' }}. No se admiten nuevos pagos.</span>
+    </div>
+{% else %}
+    <div class="cierre-banner cierre-banner-abierto">
+        <strong>Caja abierta</strong>
+        <span>Se pueden registrar pagos hasta que se cierre la caja del día.</span>
+    </div>
+{% endif %}
+
+<section class="section">
+    <h2>Resumen del día</h2>
+    <div class="cards">
+        <div class="card">
+            <span class="card-value">S/ {{ total_dia|floatformat:"2u" }}</span>
+            <span class="card-label">Total cobrado hoy</span>
+        </div>
+        <div class="card">
+            <span class="card-value">{{ cantidad_pagos }}</span>
+            <span class="card-label">Pagos registrados</span>
+        </div>
+        {% for metodo, total in totales_por_metodo %}
+            <div class="card">
+                <span class="card-value">S/ {{ total|floatformat:"2u" }}</span>
+                <span class="card-label">{{ metodo.label }}</span>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="section">
+    <h2>Pedidos pendientes de pago</h2>
+    {% if pendientes %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Pedido</th>
+                        <th>Mesa</th>
+                        <th>Mesero</th>
+                        <th>Total</th>
+                        <th>Entregado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pedido in pendientes %}
+                        <tr>
+                            <td>Pedido {{ pedido.id }}</td>
+                            <td>Mesa {{ pedido.mesa.numero }}</td>
+                            <td>{{ pedido.mesero.get_full_name|default:pedido.mesero.username }}</td>
+                            <td>S/ {{ pedido.total|floatformat:"2u" }}</td>
+                            <td>{{ pedido.fecha_actualizacion|date:'d/m/Y H:i' }}</td>
+                            <td>
+                                {% if cierre_del_dia %}
+                                    <span class="empty-inline">Caja cerrada</span>
+                                {% else %}
+                                    <a href="{% url 'registrar_pago' pedido.pk %}" class="btn btn-primary btn-small">Cobrar</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="empty">No hay pedidos pendientes de pago.</p>
+    {% endif %}
+</section>
+
+<section class="section">
+    <h2>Pagos registrados hoy</h2>
+    {% if pagos %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Pago</th>
+                        <th>Pedido</th>
+                        <th>Mesa</th>
+                        <th>Método</th>
+                        <th>Monto</th>
+                        <th>Vuelto</th>
+                        <th>Cajero</th>
+                        <th>Hora</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pago in pagos %}
+                        <tr>
+                            <td>{{ pago.id }}</td>
+                            <td>Pedido {{ pago.pedido_id }}</td>
+                            <td>Mesa {{ pago.pedido.mesa.numero }}</td>
+                            <td>{{ pago.get_metodo_display }}</td>
+                            <td>S/ {{ pago.monto|floatformat:"2u" }}</td>
+                            <td>S/ {{ pago.vuelto|floatformat:"2u" }}</td>
+                            <td>{{ pago.cajero.get_full_name|default:pago.cajero.username }}</td>
+                            <td>{{ pago.fecha_pago|date:'H:i' }}</td>
+                            <td><a href="{% url 'detalle_pago' pago.pk %}" class="btn btn-secondary btn-small">Ver</a></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="empty">Aún no hay pagos registrados hoy.</p>
+    {% endif %}
+</section>
+{% endblock %}

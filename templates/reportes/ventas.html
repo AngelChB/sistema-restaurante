@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block title %}Reportes de ventas | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Reportes de ventas</h1>
+</div>
+
+<form method="get" action="{% url 'reporte_ventas' %}" class="filtro-fechas">
+    <div class="form-group">
+        <label for="fecha_desde">Desde</label>
+        <input
+            type="date"
+            name="fecha_desde"
+            id="fecha_desde"
+            value="{{ fecha_desde|date:'Y-m-d' }}"
+            class="form-input">
+    </div>
+    <div class="form-group">
+        <label for="fecha_hasta">Hasta</label>
+        <input
+            type="date"
+            name="fecha_hasta"
+            id="fecha_hasta"
+            value="{{ fecha_hasta|date:'Y-m-d' }}"
+            class="form-input">
+    </div>
+    <button type="submit" class="btn btn-primary">Consultar</button>
+    <button
+        type="submit"
+        formaction="{% url 'exportar_ventas_csv' %}"
+        class="btn btn-export">Exportar CSV</button>
+</form>
+
+<section class="section">
+    <h2>Resumen del periodo</h2>
+    <div class="cards metricas">
+        <div class="card">
+            <span class="card-value">S/ {{ total_vendido|floatformat:"2u" }}</span>
+            <span class="card-label">Total vendido</span>
+        </div>
+        <div class="card">
+            <span class="card-value">{{ cantidad_pagos }}</span>
+            <span class="card-label">Cantidad de pagos</span>
+        </div>
+        <div class="card">
+            <span class="card-value">S/ {{ ticket_promedio|floatformat:"2u" }}</span>
+            <span class="card-label">Ticket promedio</span>
+        </div>
+        <div class="card">
+            <span class="card-value">S/ {{ total_efectivo|floatformat:"2u" }}</span>
+            <span class="card-label">Efectivo</span>
+        </div>
+        <div class="card">
+            <span class="card-value">S/ {{ total_tarjeta|floatformat:"2u" }}</span>
+            <span class="card-label">Tarjeta</span>
+        </div>
+        <div class="card">
+            <span class="card-value">S/ {{ total_yape|floatformat:"2u" }}</span>
+            <span class="card-label">Yape</span>
+        </div>
+        <div class="card">
+            <span class="card-value">S/ {{ total_plin|floatformat:"2u" }}</span>
+            <span class="card-label">Plin</span>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <h2>Productos más vendidos</h2>
+    {% if productos_mas_vendidos %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Posición</th>
+                        <th>Producto</th>
+                        <th>Categoría</th>
+                        <th>Cantidad vendida</th>
+                        <th>Ingreso generado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for producto in productos_mas_vendidos %}
+                        <tr>
+                            <td class="ranking-posicion">{{ forloop.counter }}</td>
+                            <td>{{ producto.producto__nombre }}</td>
+                            <td>{{ producto.producto__categoria__nombre }}</td>
+                            <td>{{ producto.cantidad_total }}</td>
+                            <td>S/ {{ producto.ingreso|floatformat:"2u" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="empty">No hay productos vendidos en el rango seleccionado.</p>
+    {% endif %}
+</section>
+
+<section class="section">
+    <h2>Ventas por día</h2>
+    {% if ventas_por_dia %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Cantidad de pagos</th>
+                        <th>Total vendido</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for venta in ventas_por_dia %}
+                        <tr>
+                            <td>{{ venta.fecha|date:'d/m/Y' }}</td>
+                            <td>{{ venta.cantidad }}</td>
+                            <td>S/ {{ venta.total|floatformat:"2u" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="empty">No hay ventas registradas en el rango seleccionado.</p>
+    {% endif %}
+</section>
+
+<section class="section">
+    <h2>Pagos recientes</h2>
+    {% if pagos_recientes %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Pago</th>
+                        <th>Fecha</th>
+                        <th>Pedido</th>
+                        <th>Mesa</th>
+                        <th>Método</th>
+                        <th>Monto</th>
+                        <th>Cajero</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pago in pagos_recientes %}
+                        <tr>
+                            <td>{{ pago.id }}</td>
+                            <td>{{ pago.fecha_pago|date:'d/m/Y H:i' }}</td>
+                            <td>Pedido {{ pago.pedido_id }}</td>
+                            <td>Mesa {{ pago.pedido.mesa.numero }}</td>
+                            <td>{{ pago.get_metodo_display }}</td>
+                            <td>S/ {{ pago.monto|floatformat:"2u" }}</td>
+                            <td>{{ pago.cajero.get_full_name|default:pago.cajero.username }}</td>
+                            <td><a href="{% url 'detalle_pago' pago.pk %}" class="btn btn-secondary btn-small">Ver</a></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="empty">No hay pagos en el rango seleccionado.</p>
+    {% endif %}
+</section>
+{% endblock %}

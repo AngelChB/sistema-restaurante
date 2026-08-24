@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block title %}Reserva {{ reserva.pk }} | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Reserva {{ reserva.pk }}</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'lista_reservas' %}" class="btn btn-secondary">Volver a reservas</a>
+        <a href="{% url 'crear_reserva' %}" class="btn btn-primary">Nueva reserva</a>
+    </div>
+</div>
+
+<div class="detalle-info">
+    <div class="info-item"><span class="info-label">Cliente:</span> {{ reserva.cliente.nombres }} {{ reserva.cliente.apellidos }}</div>
+    <div class="info-item"><span class="info-label">Teléfono:</span> {{ reserva.cliente.telefono }}</div>
+    {% if reserva.cliente.documento %}
+        <div class="info-item"><span class="info-label">Documento:</span> {{ reserva.cliente.documento }}</div>
+    {% endif %}
+    <div class="info-item"><span class="info-label">Mesa:</span> Mesa {{ reserva.mesa.numero }}</div>
+    <div class="info-item"><span class="info-label">Fecha y hora:</span> {{ reserva.fecha_hora|date:'d/m/Y H:i' }}</div>
+    <div class="info-item"><span class="info-label">Duración:</span> {{ reserva.duracion_minutos }} minutos</div>
+    <div class="info-item"><span class="info-label">Personas:</span> {{ reserva.cantidad_personas }}</div>
+    <div class="info-item"><span class="info-label">Estado:</span> <span class="estado-badge estado-reserva-{{ reserva.estado|lower }}">{{ reserva.get_estado_display }}</span></div>
+    <div class="info-item"><span class="info-label">Registrado por:</span> {{ reserva.usuario.get_full_name|default:reserva.usuario.username }}</div>
+    <div class="info-item"><span class="info-label">Creado:</span> {{ reserva.fecha_creacion|date:'d/m/Y H:i' }}</div>
+    {% if reserva.observacion %}
+        <div class="info-item"><span class="info-label">Observación:</span> {{ reserva.observacion }}</div>
+    {% endif %}
+</div>
+
+{% if reserva.estado == 'PENDIENTE' or reserva.estado == 'CONFIRMADA' %}
+    <section class="section">
+        <h2>Acciones</h2>
+        <div class="page-header-actions">
+            <a href="{% url 'editar_reserva' reserva.pk %}" class="btn btn-secondary">Editar reserva</a>
+            {% for valor in estados_siguientes %}
+                {% if valor == 'CONFIRMADA' %}
+                    <form method="post" action="{% url 'confirmar_reserva' reserva.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary">Confirmar reserva</button>
+                    </form>
+                {% elif valor == 'ATENDIDA' %}
+                    <form method="post" action="{% url 'atender_reserva' reserva.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary">Marcar como atendida</button>
+                    </form>
+                {% elif valor == 'NO_ASISTIO' %}
+                    <form method="post" action="{% url 'no_asistio_reserva' reserva.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-secondary">No asistió</button>
+                    </form>
+                {% elif valor == 'CANCELADA' %}
+                    <form method="post" action="{% url 'cancelar_reserva' reserva.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger" data-confirm="¿Cancelar la reserva de {{ reserva.cliente.nombres|default:'este cliente' }}? Esta acción no se puede deshacer.">Cancelar reserva</button>
+                    </form>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </section>
+{% elif reserva.estado == 'ATENDIDA' %}
+    <p class="help-text">Esta reserva fue atendida.</p>
+{% elif reserva.estado == 'NO_ASISTIO' %}
+    <p class="help-text">El cliente no asistió a esta reserva.</p>
+{% elif reserva.estado == 'CANCELADA' %}
+    <p class="help-text">Esta reserva fue cancelada.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,376 @@
+{% extends 'base.html' %}
+
+{% block title %}Panel principal | Restaurante{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Panel principal</h1>
+    <p>Bienvenido, {{ user.get_full_name|default:user.username }}.</p>
+</div>
+
+{% if es_administrador or rol_usuario %}
+    <div class="accesos-rapidos">
+        {% if es_administrador %}
+            <a href="{% url 'crear_pedido' %}" class="acceso-rapido">Nuevo pedido</a>
+            <a href="{% url 'crear_reserva' %}" class="acceso-rapido">Nueva reserva</a>
+            <a href="{% url 'registrar_movimiento' %}" class="acceso-rapido">Registrar movimiento</a>
+            <a href="{% url 'crear_compra' %}" class="acceso-rapido">Nueva compra</a>
+            <a href="{% url 'panel_caja' %}" class="acceso-rapido">Caja</a>
+            <a href="{% url 'reporte_ventas' %}" class="acceso-rapido">Reportes</a>
+        {% elif rol_usuario == 'MESERO' %}
+            <a href="{% url 'crear_pedido' %}" class="acceso-rapido">Nuevo pedido</a>
+            <a href="{% url 'crear_reserva' %}" class="acceso-rapido">Nueva reserva</a>
+            <a href="{% url 'panel_sala' %}" class="acceso-rapido">Sala</a>
+        {% elif rol_usuario == 'COCINA' %}
+            <a href="{% url 'panel_cocina' %}" class="acceso-rapido">Cocina</a>
+            <a href="{% url 'panel_inventario' %}" class="acceso-rapido">Inventario</a>
+            <a href="{% url 'lista_compras' %}" class="acceso-rapido">Compras</a>
+        {% elif rol_usuario == 'CAJERO' %}
+            <a href="{% url 'panel_caja' %}" class="acceso-rapido">Caja</a>
+            <a href="{% url 'reporte_ventas' %}" class="acceso-rapido">Reportes</a>
+        {% endif %}
+    </div>
+
+    <section class="section">
+        <h2>Resumen</h2>
+        <div class="cards metricas dashboard-metricas">
+            {% if es_administrador %}
+                <div class="card">
+                    <span class="card-value">S/ {{ ventas_hoy|floatformat:"2u" }}</span>
+                    <span class="card-label">Ventas de hoy</span>
+                </div>
+                <div class="card">
+                    <span class="card-value">{{ pedidos_activos_cantidad }}</span>
+                    <span class="card-label">Pedidos activos</span>
+                </div>
+                <div class="card">
+                    <span class="card-value">{{ mesas_libres }}</span>
+                    <span class="card-label">Mesas libres</span>
+                </div>
+                <div class="card">
+                    <span class="card-value">{{ cantidad_reservas_hoy }}</span>
+                    <span class="card-label">Reservas de hoy</span>
+                </div>
+                <div class="card {% if bajo_stock %}metrica-alerta{% endif %}">
+                    <span class="card-value">{{ bajo_stock }}</span>
+                    <span class="card-label">Bajo stock</span>
+                </div>
+                <div class="card {% if cantidad_compras_borrador %}metrica-alerta{% endif %}">
+                    <span class="card-value">{{ cantidad_compras_borrador }}</span>
+                    <span class="card-label">Compras pendientes</span>
+                </div>
+            {% elif rol_usuario == 'MESERO' %}
+                <div class="card">
+                    <span class="card-value">{{ pedidos_activos_cantidad }}</span>
+                    <span class="card-label">Mis pedidos activos</span>
+                </div>
+                <div class="card">
+                    <span class="card-value">{{ mesas_libres }}</span>
+                    <span class="card-label">Mesas libres</span>
+                </div>
+                <div class="card">
+                    <span class="card-value">{{ mesas_ocupadas }}</span>
+                    <span class="card-label">Mesas ocupadas</span>
+                </div>
+                <div class="card">
+                    <span class="card-value">{{ cantidad_reservas_hoy }}</span>
+                    <span class="card-label">Reservas de hoy</span>
+                </div>
+                <div class="card">
+                    <span class="card-value">{{ cantidad_listos }}</span>
+                    <span class="card-label">Pedidos listos para entregar</span>
+                </div>
+            {% elif rol_usuario == 'COCINA' %}
+                <div class="card">
+                    <span class="card-value">{{ cantidad_abiertos }}</span>
+                    <span class="card-label">Pedidos nuevos</span>
+                </div>
+                <div class="card">
+                    <span class="card-value">{{ cantidad_en_preparacion }}</span>
+                    <span class="card-label">En preparación</span>
+                </div>
+                <div class="card">
+                    <span class="card-value">{{ cantidad_listos }}</span>
+                    <span class="card-label">Listos</span>
+                </div>
+                <div class="card {% if bajo_stock %}metrica-alerta{% endif %}">
+                    <span class="card-value">{{ bajo_stock }}</span>
+                    <span class="card-label">Ingredientes con bajo stock</span>
+                </div>
+            {% elif rol_usuario == 'CAJERO' %}
+                <div class="card">
+                    <span class="card-value">S/ {{ ventas_hoy|floatformat:"2u" }}</span>
+                    <span class="card-label">Ventas de hoy</span>
+                </div>
+                <div class="card">
+                    <span class="card-value">{{ cantidad_pagos_hoy }}</span>
+                    <span class="card-label">Cantidad de pagos</span>
+                </div>
+                <div class="card">
+                    <span class="card-value">S/ {{ ticket_promedio|floatformat:"2u" }}</span>
+                    <span class="card-label">Ticket promedio</span>
+                </div>
+                <div class="card">
+                    <span class="card-value">{{ pedidos_pendientes_cobro }}</span>
+                    <span class="card-label">Pedidos pendientes de cobro</span>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+{% endif %}
+
+{% if puede_ver_mesas %}
+    <section class="section">
+        <h2>Estado de mesas</h2>
+        <div class="mesas-estado-grid">
+            <div class="mesas-estado-item">
+                <span class="mesas-estado-valor">{{ mesas_activas }}</span>
+                <span class="estado-badge estado-libre">Mesas activas</span>
+            </div>
+            <div class="mesas-estado-item">
+                <span class="mesas-estado-valor">{{ mesas_libres }}</span>
+                <span class="estado-badge estado-libre">Libres</span>
+            </div>
+            <div class="mesas-estado-item">
+                <span class="mesas-estado-valor">{{ mesas_ocupadas }}</span>
+                <span class="estado-badge estado-ocupada">Ocupadas</span>
+            </div>
+            <div class="mesas-estado-item">
+                <span class="mesas-estado-valor">{{ mesas_reservadas }}</span>
+                <span class="estado-badge estado-reservada">Reservadas</span>
+            </div>
+            <div class="mesas-estado-item">
+                <span class="mesas-estado-valor">{{ mesas_fuera_servicio }}</span>
+                <span class="estado-badge estado-fuera_servicio">Fuera de servicio</span>
+            </div>
+        </div>
+    </section>
+{% endif %}
+
+{% if puede_ver_pedidos %}
+    <section class="section">
+        <h2>Pedidos activos</h2>
+        {% if pedidos_activos %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Pedido</th>
+                            <th>Mesa</th>
+                            <th>Mesero</th>
+                            <th>Estado</th>
+                            <th>Total</th>
+                            <th>Hora</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pedido in pedidos_activos %}
+                            <tr>
+                                <td>Pedido {{ pedido.id }}</td>
+                                <td>Mesa {{ pedido.mesa.numero }}</td>
+                                <td>{{ pedido.mesero.get_full_name|default:pedido.mesero.username }}</td>
+                                <td><span class="estado-badge estado-pedido-{{ pedido.estado|lower }}">{{ pedido.get_estado_display }}</span></td>
+                                <td>S/ {{ pedido.total|floatformat:"2u" }}</td>
+                                <td>{{ pedido.fecha_creacion|date:'H:i' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="empty">No hay pedidos activos.</p>
+        {% endif %}
+    </section>
+{% endif %}
+
+{% if puede_ver_pedidos %}
+    <section class="section">
+        <h2>Pedidos recientes</h2>
+        {% if pedidos_recientes %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Pedido</th>
+                            <th>Mesa</th>
+                            <th>Mesero</th>
+                            <th>Estado</th>
+                            <th>Total</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pedido in pedidos_recientes %}
+                            <tr>
+                                <td>Pedido {{ pedido.id }}</td>
+                                <td>Mesa {{ pedido.mesa.numero }}</td>
+                                <td>{{ pedido.mesero.get_full_name|default:pedido.mesero.username }}</td>
+                                <td><span class="estado-badge estado-pedido-{{ pedido.estado|lower }}">{{ pedido.get_estado_display }}</span></td>
+                                <td>S/ {{ pedido.total|floatformat:"2u" }}</td>
+                                <td>{{ pedido.fecha_creacion|date:'d/m/Y H:i' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="empty">No hay pedidos recientes.</p>
+        {% endif %}
+    </section>
+{% endif %}
+
+{% if puede_ver_reservas %}
+    <section class="section">
+        <h2>Próximas reservas</h2>
+        <p class="help-text">
+            Confirmadas hoy: {{ cantidad_confirmadas }} · Pendientes hoy: {{ cantidad_pendientes }}
+        </p>
+        {% if proximas_reservas %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Mesa</th>
+                            <th>Hora</th>
+                            <th>Personas</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reserva in proximas_reservas %}
+                            <tr>
+                                <td>{{ reserva.cliente.nombres }} {{ reserva.cliente.apellidos }}</td>
+                                <td>Mesa {{ reserva.mesa.numero }}</td>
+                                <td>{{ reserva.fecha_hora|date:'H:i' }}</td>
+                                <td>{{ reserva.cantidad_personas }}</td>
+                                <td><span class="estado-badge estado-reserva-{{ reserva.estado|lower }}">{{ reserva.get_estado_display }}</span></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="empty">No hay reservas próximas para hoy.</p>
+        {% endif %}
+    </section>
+{% endif %}
+
+{% if puede_ver_inventario %}
+    <section class="section">
+        <h2>Alertas de inventario</h2>
+        <p class="help-text">
+            Activos: {{ cantidad_ingredientes }} · Bajo stock: {{ bajo_stock }} · Sin stock: {{ sin_stock }}
+        </p>
+        {% if ingredientes_criticos %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Ingrediente</th>
+                            <th>Stock actual</th>
+                            <th>Stock mínimo</th>
+                            <th>Unidad</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ingrediente in ingredientes_criticos %}
+                            <tr>
+                                <td>{{ ingrediente.nombre }}</td>
+                                <td>{{ ingrediente.stock_actual|floatformat:"3u" }}</td>
+                                <td>{{ ingrediente.stock_minimo|floatformat:"3u" }}</td>
+                                <td>{{ ingrediente.unidad_medida.abreviatura }}</td>
+                                <td>
+                                    {% if ingrediente.stock_actual == 0 %}
+                                        <span class="stock-badge stock-sin-stock">Sin stock</span>
+                                    {% else %}
+                                        <span class="stock-badge stock-bajo">Bajo stock</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="empty">No hay alertas de stock.</p>
+        {% endif %}
+    </section>
+{% endif %}
+
+{% if puede_ver_compras %}
+    <section class="section">
+        <h2>Compras pendientes</h2>
+        {% if compras_pendientes %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Compra</th>
+                            <th>Proveedor</th>
+                            <th>Fecha</th>
+                            <th>Total</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for compra in compras_pendientes %}
+                            <tr>
+                                <td>Compra {{ compra.id }}</td>
+                                <td>{{ compra.proveedor.razon_social }}</td>
+                                <td>{{ compra.fecha_documento|date:'d/m/Y' }}</td>
+                                <td>S/ {{ compra.total|floatformat:"2u" }}</td>
+                                <td><a href="{% url 'detalle_compra' compra.pk %}" class="btn btn-secondary btn-small">Ver</a></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="empty">No hay compras pendientes.</p>
+        {% endif %}
+    </section>
+{% endif %}
+
+{% if puede_ver_caja %}
+    <section class="section">
+        <h2>Ventas de hoy</h2>
+        <div class="cards metricas">
+            <div class="card">
+                <span class="card-value">S/ {{ ventas_hoy|floatformat:"2u" }}</span>
+                <span class="card-label">Total vendido</span>
+            </div>
+            <div class="card">
+                <span class="card-value">{{ cantidad_pagos_hoy }}</span>
+                <span class="card-label">Cantidad de pagos</span>
+            </div>
+            <div class="card">
+                <span class="card-value">S/ {{ ticket_promedio|floatformat:"2u" }}</span>
+                <span class="card-label">Ticket promedio</span>
+            </div>
+            <div class="card">
+                <span class="card-value">S/ {{ total_efectivo|floatformat:"2u" }}</span>
+                <span class="card-label">Efectivo</span>
+            </div>
+            <div class="card">
+                <span class="card-value">S/ {{ total_tarjeta|floatformat:"2u" }}</span>
+                <span class="card-label">Tarjeta</span>
+            </div>
+            <div class="card">
+                <span class="card-value">S/ {{ total_yape|floatformat:"2u" }}</span>
+                <span class="card-label">Yape</span>
+            </div>
+            <div class="card">
+                <span class="card-value">S/ {{ total_plin|floatformat:"2u" }}</span>
+                <span class="card-label">Plin</span>
+            </div>
+        </div>
+        {% if caja_cerrada_hoy %}
+            <p class="empty-inline">La caja de hoy ya fue cerrada.</p>
+        {% else %}
+            <p class="empty-inline">La caja de hoy sigue abierta.</p>
+        {% endif %}
+    </section>
+{% endif %}
+{% endblock %}

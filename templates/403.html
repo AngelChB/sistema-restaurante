@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block title %}Acceso no autorizado | Restaurante{% endblock %}
+
+{% block content %}
+<div class="acceso-denegado">
+    <div class="acceso-denegado-icono" aria-hidden="true">!</div>
+    <h1>Acceso no autorizado</h1>
+    <p>No tienes permisos para acceder a esta sección.</p>
+    <a href="{% url 'dashboard' %}" class="btn btn-primary">Volver al panel</a>
+</div>
+{% endblock %}

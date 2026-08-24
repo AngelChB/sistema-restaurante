@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Proveedores | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Proveedores</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'lista_compras' %}" class="btn btn-secondary">Compras</a>
+        {% if puede_gestionar_compras %}
+            <a href="{% url 'crear_proveedor' %}" class="btn btn-primary">Nuevo proveedor</a>
+        {% endif %}
+    </div>
+</div>
+
+<form method="get" action="{% url 'lista_proveedores' %}" class="filter-bar">
+    <input type="text" name="buscar" value="{{ buscar }}" placeholder="Buscar por razón social, RUC, contacto..." class="form-input filter-buscar">
+    <select name="estado" class="form-input filter-select">
+        <option value="">Todos los estados</option>
+        <option value="activos" {% if estado == 'activos' %}selected{% endif %}>Activos</option>
+        <option value="inactivos" {% if estado == 'inactivos' %}selected{% endif %}>Inactivos</option>
+    </select>
+    <button type="submit" class="btn btn-primary">Filtrar</button>
+</form>
+
+{% if proveedores %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Razón social</th>
+                    <th>RUC</th>
+                    <th>Contacto</th>
+                    <th>Teléfono</th>
+                    <th>Estado</th>
+                    {% if puede_gestionar_compras %}<th>Acciones</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for proveedor in proveedores %}
+                    <tr>
+                        <td>{{ proveedor.razon_social }}</td>
+                        <td>{{ proveedor.ruc|default:'—' }}</td>
+                        <td>{{ proveedor.contacto|default:'—' }}</td>
+                        <td>{{ proveedor.telefono|default:'—' }}</td>
+                        <td>
+                            {% if proveedor.activo %}
+                                <span class="estado-badge stock-normal">Activo</span>
+                            {% else %}
+                                <span class="estado-badge estado-fuera_servicio">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        {% if puede_gestionar_compras %}
+                            <td>
+                                <a href="{% url 'editar_proveedor' proveedor.pk %}" class="btn btn-secondary btn-small">Editar</a>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p class="empty">No se encontraron proveedores con los filtros aplicados.</p>
+{% endif %}
+{% endblock %}

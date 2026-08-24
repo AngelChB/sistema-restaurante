@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Cerrar caja | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Cerrar caja</h1>
+    <p class="help-text">Cierre del día {{ hoy|date:'d/m/Y' }}</p>
+    <div class="page-header-actions">
+        <a href="{% url 'panel_caja' %}" class="btn btn-secondary">Volver a caja</a>
+    </div>
+</div>
+
+<section class="section">
+    <h2>Resumen antes de cerrar</h2>
+    <div class="cards">
+        <div class="card">
+            <span class="card-value">S/ {{ resumen.total|floatformat:"2u" }}</span>
+            <span class="card-label">Total cobrado</span>
+        </div>
+        <div class="card">
+            <span class="card-value">{{ resumen.cantidad_pagos }}</span>
+            <span class="card-label">Pagos registrados</span>
+        </div>
+        <div class="card">
+            <span class="card-value">S/ {{ resumen.efectivo|floatformat:"2u" }}</span>
+            <span class="card-label">Efectivo</span>
+        </div>
+        <div class="card">
+            <span class="card-value">S/ {{ resumen.tarjeta|floatformat:"2u" }}</span>
+            <span class="card-label">Tarjeta</span>
+        </div>
+        <div class="card">
+            <span class="card-value">S/ {{ resumen.yape|floatformat:"2u" }}</span>
+            <span class="card-label">Yape</span>
+        </div>
+        <div class="card">
+            <span class="card-value">S/ {{ resumen.plin|floatformat:"2u" }}</span>
+            <span class="card-label">Plin</span>
+        </div>
+    </div>
+</section>
+
+<div class="form-card">
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="message message-error">
+                {% for error in form.non_field_errors %}
+                    {{ error }}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <p class="help-text">
+            Al cerrar la caja ya no se podrán registrar más pagos hoy.
+        </p>
+
+        {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                    <small class="help-text">{{ field.help_text }}</small>
+                {% endif %}
+                {% if field.errors %}
+                    <ul class="error-list">
+                        {% for error in field.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary" onclick="return confirm('¿Confirmas el cierre de caja del día {{ hoy|date:'d/m/Y' }}? Esta acción no se puede deshacer.')">Confirmar cierre de caja</button>
+            <a href="{% url 'panel_caja' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

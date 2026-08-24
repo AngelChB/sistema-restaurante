@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Panel de inventario | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Panel de inventario</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'lista_ingredientes' %}" class="btn btn-secondary">Ingredientes</a>
+        <a href="{% url 'historial_movimientos' %}" class="btn btn-secondary">Movimientos</a>
+        <a href="{% url 'lista_recetas' %}" class="btn btn-secondary">Recetas</a>
+        {% if puede_gestionar_inventario %}
+            <a href="{% url 'registrar_movimiento' %}" class="btn btn-primary">Registrar movimiento</a>
+        {% endif %}
+    </div>
+</div>
+
+<section class="section">
+    <h2>Resumen del inventario</h2>
+    <div class="cards">
+        <div class="card">
+            <span class="card-value">{{ total_ingredientes }}</span>
+            <span class="card-label">Ingredientes activos</span>
+        </div>
+        <div class="card {% if bajo_stock %}metrica-alerta{% endif %}">
+            <span class="card-value">{{ bajo_stock }}</span>
+            <span class="card-label">Con bajo stock</span>
+        </div>
+        <div class="card {% if sin_stock %}metrica-critica{% endif %}">
+            <span class="card-value">{{ sin_stock }}</span>
+            <span class="card-label">Sin stock</span>
+        </div>
+        <div class="card">
+            <span class="card-value">S/ {{ valor_inventario|floatformat:"2u" }}</span>
+            <span class="card-label">Valor del inventario</span>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <h2>Ingredientes con menor stock</h2>
+    {% if menores_stock %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Ingrediente</th>
+                        <th>Unidad</th>
+                        <th>Stock actual</th>
+                        <th>Stock mínimo</th>
+                        <th>Costo unitario</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ingrediente in menores_stock %}
+                        <tr>
+                            <td>{{ ingrediente.nombre }}</td>
+                            <td>{{ ingrediente.unidad_medida.abreviatura }}</td>
+                            <td>{{ ingrediente.stock_actual|floatformat:"3u" }}</td>
+                            <td>{{ ingrediente.stock_minimo|floatformat:"3u" }}</td>
+                            <td>S/ {{ ingrediente.costo_unitario|floatformat:"4u" }}</td>
+                            <td>
+                                {% if ingrediente.stock_actual == 0 %}
+                                    <span class="stock-badge stock-sin-stock">Sin stock</span>
+                                {% elif ingrediente.bajo_stock %}
+                                    <span class="stock-badge stock-bajo">Bajo stock</span>
+                                {% else %}
+                                    <span class="stock-badge stock-normal">Stock normal</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="empty">No hay ingredientes registrados.</p>
+    {% endif %}
+</section>
+
+<section class="section">
+    <h2>Movimientos recientes</h2>
+    {% if movimientos_recientes %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Ingrediente</th>
+                        <th>Tipo</th>
+                        <th>Cantidad</th>
+                        <th>Stock anterior</th>
+                        <th>Stock resultante</th>
+                        <th>Usuario</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for movimiento in movimientos_recientes %}
+                        <tr>
+                            <td>{{ movimiento.fecha_creacion|date:'d/m/Y H:i' }}</td>
+                            <td>{{ movimiento.ingrediente.nombre }}</td>
+                            <td>{{ movimiento.get_tipo_display }}</td>
+                            <td>{{ movimiento.cantidad|floatformat:"3u" }}</td>
+                            <td>{{ movimiento.stock_anterior|floatformat:"3u" }}</td>
+                            <td>{{ movimiento.stock_resultante|floatformat:"3u" }}</td>
+                            <td>{{ movimiento.usuario.get_full_name|default:movimiento.usuario.username }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <p class="empty-inline"><a href="{% url 'historial_movimientos' %}">Ver todo el historial</a></p>
+    {% else %}
+        <p class="empty">Aún no hay movimientos registrados.</p>
+    {% endif %}
+</section>
+{% endblock %}

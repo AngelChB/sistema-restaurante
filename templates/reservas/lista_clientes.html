@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Clientes | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Clientes</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'lista_reservas' %}" class="btn btn-secondary">Reservas</a>
+        <a href="{% url 'crear_cliente' %}" class="btn btn-primary">Nuevo cliente</a>
+    </div>
+</div>
+
+<form method="get" action="{% url 'lista_clientes' %}" class="filter-bar">
+    <input type="text" name="buscar" value="{{ buscar }}" placeholder="Buscar por nombre, documento o teléfono..." class="form-input filter-buscar">
+    <select name="estado" class="form-input filter-select">
+        <option value="">Todos</option>
+        <option value="activos" {% if estado == 'activos' %}selected{% endif %}>Activos</option>
+        <option value="inactivos" {% if estado == 'inactivos' %}selected{% endif %}>Inactivos</option>
+    </select>
+    <button type="submit" class="btn btn-primary">Filtrar</button>
+</form>
+
+{% if clientes %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Documento</th>
+                    <th>Teléfono</th>
+                    <th>Email</th>
+                    <th>Reservas</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cliente in clientes %}
+                    <tr>
+                        <td>{{ cliente.nombres }} {{ cliente.apellidos }}</td>
+                        <td>{{ cliente.documento|default:'—' }}</td>
+                        <td>{{ cliente.telefono }}</td>
+                        <td>{{ cliente.email|default:'—' }}</td>
+                        <td>{{ cliente.cantidad_reservas }}</td>
+                        <td>
+                            {% if cliente.activo %}
+                                <span class="estado-badge stock-normal">Activo</span>
+                            {% else %}
+                                <span class="estado-badge estado-fuera_servicio">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if es_administrador %}
+                                <a href="{% url 'editar_cliente' cliente.pk %}" class="btn btn-secondary btn-small">Editar</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p class="empty">No se encontraron clientes con los filtros aplicados.</p>
+{% endif %}
+{% endblock %}

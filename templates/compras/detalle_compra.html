@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}Compra {{ compra.pk }} | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Compra {{ compra.pk }}</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'lista_compras' %}" class="btn btn-secondary">Volver a compras</a>
+        {% if puede_gestionar_compras %}
+            <a href="{% url 'crear_compra' %}" class="btn btn-primary">Nueva compra</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="detalle-info">
+    <div class="info-item"><span class="info-label">Proveedor:</span> {{ compra.proveedor.razon_social }}</div>
+    <div class="info-item"><span class="info-label">Documento:</span> {{ compra.numero_documento|default:'—' }}</div>
+    <div class="info-item"><span class="info-label">Fecha del documento:</span> {{ compra.fecha_documento|date:'d/m/Y' }}</div>
+    <div class="info-item"><span class="info-label">Estado:</span> <span class="estado-badge estado-compra-{{ compra.estado|lower }}">{{ compra.get_estado_display }}</span></div>
+    <div class="info-item"><span class="info-label">Registrado por:</span> {{ compra.usuario.get_full_name|default:compra.usuario.username }}</div>
+    <div class="info-item"><span class="info-label">Creado:</span> {{ compra.fecha_creacion|date:'d/m/Y H:i' }}</div>
+    {% if compra.fecha_recepcion %}
+        <div class="info-item"><span class="info-label">Recibida el:</span> {{ compra.fecha_recepcion|date:'d/m/Y H:i' }}</div>
+    {% endif %}
+    {% if compra.observacion %}
+        <div class="info-item"><span class="info-label">Observación:</span> {{ compra.observacion }}</div>
+    {% endif %}
+</div>
+
+<section class="section">
+    <h2>Detalles de la compra</h2>
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Ingrediente</th>
+                    <th>Unidad</th>
+                    <th>Cantidad</th>
+                    <th>Costo unitario</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for detalle in compra.detalles.all %}
+                    <tr>
+                        <td>{{ detalle.ingrediente.nombre }}</td>
+                        <td>{{ detalle.ingrediente.unidad_medida.abreviatura }}</td>
+                        <td>{{ detalle.cantidad|floatformat:"3u" }}</td>
+                        <td>S/ {{ detalle.costo_unitario|floatformat:"4u" }}</td>
+                        <td>S/ {{ detalle.subtotal|floatformat:"2u" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="4" class="text-right"><strong>Total</strong></td>
+                    <td><strong>S/ {{ compra.total|floatformat:"2u" }}</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</section>
+
+{% if puede_gestionar_compras %}
+    <section class="section">
+        <h2>Acciones</h2>
+        {% if compra.estado == 'BORRADOR' %}
+            <div class="page-header-actions">
+                <a href="{% url 'editar_compra' compra.pk %}" class="btn btn-secondary">Editar compra</a>
+                <form method="post" action="{% url 'recibir_compra' compra.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">
+                        Recibir compra
+                    </button>
+                </form>
+                <form method="post" action="{% url 'cancelar_compra' compra.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger" data-confirm="¿Cancelar la compra #{{ compra.id }}? Esta acción no se puede deshacer.">
+                        Cancelar compra
+                    </button>
+                </form>
+            </div>
+            <p class="help-text">Al recibir la compra, los ingredientes ingresarán al inventario y se actualizará su costo unitario.</p>
+        {% elif compra.estado == 'RECIBIDA' %}
+            <p class="help-text">Esta compra ya fue recibida y sus ingredientes ingresaron al inventario.</p>
+        {% else %}
+            <p class="help-text">Esta compra fue cancelada, no se puede recibir.</p>
+        {% endif %}
+    </section>
+{% endif %}
+{% endblock %}

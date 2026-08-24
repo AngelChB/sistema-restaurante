@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}Historial de movimientos | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Historial de movimientos</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'lista_ingredientes' %}" class="btn btn-secondary">Ingredientes</a>
+        {% if puede_gestionar_inventario %}
+            <a href="{% url 'registrar_movimiento' %}" class="btn btn-primary">Registrar movimiento</a>
+        {% endif %}
+    </div>
+</div>
+
+<form method="get" action="{% url 'historial_movimientos' %}" class="filter-bar">
+    <select name="ingrediente" class="form-input filter-select">
+        <option value="">Todos los ingredientes</option>
+        {% for ingrediente in ingredientes %}
+            <option value="{{ ingrediente.pk }}" {% if ingrediente_id == ingrediente.pk|stringformat:'s' %}selected{% endif %}>{{ ingrediente.nombre }}</option>
+        {% endfor %}
+    </select>
+    <select name="tipo" class="form-input filter-select">
+        <option value="">Todos los tipos</option>
+        {% for valor, etiqueta in tipos %}
+            <option value="{{ valor }}" {% if tipo == valor %}selected{% endif %}>{{ etiqueta }}</option>
+        {% endfor %}
+    </select>
+    <div class="filtro-fecha">
+        <label for="fecha_desde" class="help-text">Desde</label>
+        <input type="date" id="fecha_desde" name="fecha_desde" value="{{ fecha_desde }}" class="form-input">
+    </div>
+    <div class="filtro-fecha">
+        <label for="fecha_hasta" class="help-text">Hasta</label>
+        <input type="date" id="fecha_hasta" name="fecha_hasta" value="{{ fecha_hasta }}" class="form-input">
+    </div>
+    <button type="submit" class="btn btn-primary">Filtrar</button>
+</form>
+
+{% if movimientos %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Ingrediente</th>
+                    <th>Pedido</th>
+                    <th>Compra</th>
+                    <th>Tipo</th>
+                    <th>Cantidad</th>
+                    <th>Stock anterior</th>
+                    <th>Stock resultante</th>
+                    <th>Motivo</th>
+                    <th>Referencia</th>
+                    <th>Usuario</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for movimiento in movimientos %}
+                    <tr>
+                        <td>{{ movimiento.fecha_creacion|date:'d/m/Y H:i' }}</td>
+                        <td>{{ movimiento.ingrediente.nombre }}</td>
+                        <td>
+                            {% if movimiento.pedido %}
+                                <a href="{% url 'detalle_pedido' movimiento.pedido.pk %}">Pedido {{ movimiento.pedido.pk }}</a>
+                            {% else %}
+                                Manual
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if movimiento.compra %}
+                                <a href="{% url 'detalle_compra' movimiento.compra.pk %}">Compra {{ movimiento.compra.pk }}</a>
+                            {% else %}
+                                Manual
+                            {% endif %}
+                        </td>
+                        <td>{{ movimiento.get_tipo_display }}</td>
+                        <td>{{ movimiento.cantidad|floatformat:"3u" }}</td>
+                        <td>{{ movimiento.stock_anterior|floatformat:"3u" }}</td>
+                        <td>{{ movimiento.stock_resultante|floatformat:"3u" }}</td>
+                        <td>{{ movimiento.motivo }}</td>
+                        <td>{{ movimiento.referencia|default:'—' }}</td>
+                        <td>{{ movimiento.usuario.get_full_name|default:movimiento.usuario.username }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p class="empty">No se encontraron movimientos con los filtros aplicados.</p>
+{% endif %}
+{% endblock %}

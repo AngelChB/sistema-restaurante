@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}Pedido {{ pedido.id }} | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Pedido {{ pedido.id }}</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'lista_pedidos' %}" class="btn btn-secondary">Volver a pedidos</a>
+        <a href="{% url 'crear_pedido' %}" class="btn btn-primary">Nuevo pedido</a>
+    </div>
+</div>
+
+<div class="detalle-info">
+    <div class="info-item"><span class="info-label">Mesa:</span> {{ pedido.mesa.numero }}</div>
+    <div class="info-item"><span class="info-label">Mesero:</span> {{ pedido.mesero.get_full_name|default:pedido.mesero.username }}</div>
+    <div class="info-item"><span class="info-label">Estado:</span> <span class="estado-badge estado-pedido-{{ pedido.estado|lower }}">{{ pedido.get_estado_display }}</span></div>
+    <div class="info-item"><span class="info-label">Creado:</span> {{ pedido.fecha_creacion|date:'d/m/Y H:i' }}</div>
+    <div class="info-item"><span class="info-label">Actualizado:</span> {{ pedido.fecha_actualizacion|date:'d/m/Y H:i' }}</div>
+    {% if pedido.observacion %}
+        <div class="info-item"><span class="info-label">Observación:</span> {{ pedido.observacion }}</div>
+    {% endif %}
+</div>
+
+<section class="section">
+    <h2>Detalles del pedido</h2>
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Precio unitario</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for detalle in pedido.detalles.all %}
+                    <tr>
+                        <td>
+                            {{ detalle.producto.nombre }}
+                            {% if detalle.observacion %}
+                                <br><small class="help-text">Nota: {{ detalle.observacion }}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ detalle.cantidad }}</td>
+                        <td>S/ {{ detalle.precio_unitario|floatformat:"2u" }}</td>
+                        <td>S/ {{ detalle.subtotal|floatformat:"2u" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3" class="text-right"><strong>Total</strong></td>
+                    <td><strong>S/ {{ pedido.total|floatformat:"2u" }}</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</section>
+
+<section class="section">
+    <h2>Cambiar estado</h2>
+    {% if estados_siguientes %}
+        <form method="post" action="{% url 'cambiar_estado_pedido' pedido.pk %}" class="estado-form">
+            {% csrf_token %}
+            <label for="estado">Siguiente estado:</label>
+            <select name="estado" id="estado" class="form-input">
+                {% for valor in estados_siguientes %}
+                    <option value="{{ valor }}">{{ valor.label }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">Cambiar estado</button>
+        </form>
+    {% elif pedido.estado == 'ENTREGADO' %}
+        <p class="empty">Este pedido está entregado, no se pueden realizar más cambios manuales.</p>
+    {% else %}
+        <p class="empty">Este pedido ya está {{ pedido.get_estado_display|lower }}, no se pueden realizar más cambios.</p>
+    {% endif %}
+</section>
+
+<section class="section">
+    <h2>Acciones</h2>
+    <div class="acciones-pedido">
+        {% if 'CANCELADO' in estados_siguientes %}
+            <form method="post" action="{% url 'cambiar_estado_pedido' pedido.pk %}" class="accion-pedido-form">
+                {% csrf_token %}
+                <input type="hidden" name="estado" value="{{ pedido.Estado.CANCELADO }}">
+                <button type="submit" class="btn btn-danger" data-confirm="¿Cancelar el pedido #{{ pedido.id }}? Esta acción no se puede deshacer.">Cancelar pedido</button>
+            </form>
+        {% endif %}
+        <a href="{% url 'lista_pedidos' %}" class="btn btn-secondary">Volver a pedidos</a>
+    </div>
+</section>
+
+{% if puede_ver_caja %}
+    <section class="section">
+        <h2>Pago</h2>
+        {% if pedido.estado == 'ENTREGADO' and not pedido.pago %}
+            <p class="help-text">El pedido está entregado y pendiente de cobro.</p>
+            <a href="{% url 'registrar_pago' pedido.pk %}" class="btn btn-primary">Registrar pago</a>
+        {% elif pedido.estado == 'PAGADO' and pedido.pago %}
+            <p class="help-text">Este pedido ya fue cobrado el {{ pedido.pago.fecha_pago|date:'d/m/Y H:i' }}.</p>
+            <a href="{% url 'detalle_pago' pedido.pago.pk %}" class="btn btn-primary">Ver comprobante de pago</a>
+        {% endif %}
+    </section>
+{% endif %}
+{% endblock %}

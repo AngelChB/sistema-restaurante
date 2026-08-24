@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pedidos | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Pedidos</h1>
+    <div class="page-header-actions">
+        <a href="{% url 'crear_pedido' %}" class="btn btn-primary">Nuevo pedido</a>
+    </div>
+</div>
+
+<form method="get" action="{% url 'lista_pedidos' %}" class="filter-bar">
+    <input type="text" name="buscar" value="{{ buscar }}" placeholder="Buscar por número de pedido o mesa..." class="form-input filter-buscar">
+    <select name="estado" class="form-input filter-select">
+        <option value="">Todos los estados</option>
+        {% for value, label in estados %}
+            <option value="{{ value }}" {% if estado == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-primary">Filtrar</button>
+</form>
+
+<div class="filtro-chips" aria-label="Filtrar pedidos por estado">
+    <a href="{% url 'lista_pedidos' %}{% if buscar %}?buscar={{ buscar|urlencode }}{% endif %}" class="filtro-chip {% if not estado %}filtro-chip-activo{% endif %}">Todos</a>
+    {% for value, label in estados %}
+        <a href="{% url 'lista_pedidos' %}?{% if buscar %}buscar={{ buscar|urlencode }}&amp;{% endif %}estado={{ value }}" class="filtro-chip {% if estado == value %}filtro-chip-activo{% endif %}">{{ label }}</a>
+    {% endfor %}
+</div>
+
+{% if pedidos %}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Pedido</th>
+                    <th>Mesa</th>
+                    <th>Mesero</th>
+                    <th>Estado</th>
+                    <th>Total</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pedido in pedidos %}
+                    <tr class="pedido-fila" tabindex="0" data-url="{% url 'detalle_pedido' pedido.pk %}">
+                        <td><a href="{% url 'detalle_pedido' pedido.pk %}">Pedido {{ pedido.id }}</a></td>
+                        <td>Mesa {{ pedido.mesa.numero }}</td>
+                        <td>{{ pedido.mesero.get_full_name|default:pedido.mesero.username }}</td>
+                        <td><span class="estado-badge estado-pedido-{{ pedido.estado|lower }}">{{ pedido.get_estado_display }}</span></td>
+                        <td>S/ {{ pedido.total|floatformat:"2u" }}</td>
+                        <td>{{ pedido.fecha_creacion|date:'d/m/Y H:i' }}</td>
+                        <td>
+                            <a href="{% url 'detalle_pedido' pedido.pk %}" class="btn btn-secondary btn-small">Ver detalle</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p class="empty">No se encontraron pedidos con los filtros aplicados.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/pedidos.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}Cierre del {{ cierre.fecha_operacion|date:'d/m/Y' }} | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Cierre de caja del {{ cierre.fecha_operacion|date:'d/m/Y' }}</h1>
+    <p class="help-text">Cerrado a las {{ cierre.fecha_cierre|date:'H:i' }}</p>
+    <div class="page-header-actions">
+        <a href="{% url 'panel_caja' %}" class="btn btn-secondary">Volver a caja</a>
+        <button type="button" class="btn btn-primary" onclick="window.print()">Imprimir</button>
+    </div>
+</div>
+
+<div class="detalle-info">
+    <div class="info-item"><span class="info-label">Responsable:</span> {{ cierre.responsable.get_full_name|default:cierre.responsable.username }}</div>
+    <div class="info-item"><span class="info-label">Pagos del día:</span> {{ cierre.cantidad_pagos }}</div>
+    <div class="info-item"><span class="info-label">Total de ventas:</span> <strong>S/ {{ cierre.total_ventas|floatformat:"2u" }}</strong></div>
+</div>
+
+<section class="section">
+    <h2>Resumen del cierre</h2>
+    <div class="cierre-resumen">
+        <div class="cierre-fila">
+            <span class="cierre-etiqueta">Ventas en efectivo</span>
+            <span class="cierre-valor">S/ {{ cierre.efectivo_ventas|floatformat:"2u" }}</span>
+        </div>
+        <div class="cierre-fila">
+            <span class="cierre-etiqueta">Ventas con tarjeta</span>
+            <span class="cierre-valor">S/ {{ cierre.total_tarjeta|floatformat:"2u" }}</span>
+        </div>
+        <div class="cierre-fila">
+            <span class="cierre-etiqueta">Ventas con Yape</span>
+            <span class="cierre-valor">S/ {{ cierre.total_yape|floatformat:"2u" }}</span>
+        </div>
+        <div class="cierre-fila">
+            <span class="cierre-etiqueta">Ventas con Plin</span>
+            <span class="cierre-valor">S/ {{ cierre.total_plin|floatformat:"2u" }}</span>
+        </div>
+        <div class="cierre-fila">
+            <span class="cierre-etiqueta">Monto inicial</span>
+            <span class="cierre-valor">S/ {{ cierre.monto_inicial|floatformat:"2u" }}</span>
+        </div>
+        <div class="cierre-fila">
+            <span class="cierre-etiqueta">Efectivo esperado</span>
+            <span class="cierre-valor">S/ {{ cierre.efectivo_esperado|floatformat:"2u" }}</span>
+        </div>
+        <div class="cierre-fila">
+            <span class="cierre-etiqueta">Efectivo contado</span>
+            <span class="cierre-valor">S/ {{ cierre.efectivo_contado|floatformat:"2u" }}</span>
+        </div>
+        <div class="cierre-fila">
+            <span class="cierre-etiqueta">Diferencia</span>
+            <span class="cierre-valor {% if cierre.diferencia == 0 %}cierre-diferencia-cero{% elif cierre.diferencia > 0 %}cierre-diferencia-positiva{% else %}cierre-diferencia-negativa{% endif %}">
+                S/ {{ cierre.diferencia|floatformat:"2u" }}
+            </span>
+        </div>
+    </div>
+
+    {% if cierre.diferencia > 0 %}
+        <p class="help-text">Hay un sobrante de efectivo.</p>
+    {% elif cierre.diferencia < 0 %}
+        <p class="help-text">Falta efectivo en caja.</p>
+    {% else %}
+        <p class="help-text">La caja cuadra perfectamente.</p>
+    {% endif %}
+
+    {% if cierre.observacion %}
+        <p class="help-text"><strong>Observación:</strong> {{ cierre.observacion }}</p>
+    {% endif %}
+</section>
+
+<section class="section">
+    <h2>Pagos incluidos en el cierre</h2>
+    {% if pagos %}
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Pago</th>
+                        <th>Pedido</th>
+                        <th>Mesa</th>
+                        <th>Método</th>
+                        <th>Monto</th>
+                        <th>Cajero</th>
+                        <th>Hora</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pago in pagos %}
+                        <tr>
+                            <td>{{ pago.id }}</td>
+                            <td>Pedido {{ pago.pedido_id }}</td>
+                            <td>Mesa {{ pago.pedido.mesa.numero }}</td>
+                            <td>{{ pago.get_metodo_display }}</td>
+                            <td>S/ {{ pago.monto|floatformat:"2u" }}</td>
+                            <td>{{ pago.cajero.get_full_name|default:pago.cajero.username }}</td>
+                            <td>{{ pago.fecha_pago|date:'H:i' }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="empty">No hubo pagos ese día.</p>
+    {% endif %}
+</section>
+{% endblock %}

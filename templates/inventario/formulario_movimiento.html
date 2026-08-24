@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Registrar movimiento | Restaurante{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Registrar movimiento de inventario</h1>
+</div>
+
+<div class="aviso-inventario">
+    Una <strong>entrada</strong> o un <strong>ajuste positivo</strong> aumentan el stock; una
+    <strong>salida</strong> o un <strong>ajuste negativo</strong> lo reducen. El stock no puede quedar en negativo.
+    Un movimiento registrado <strong>no se puede modificar ni eliminar</strong>.
+</div>
+
+<div class="form-card form-card-wide">
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="message message-error">
+                {% for error in form.non_field_errors %}
+                    {{ error }}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <ul class="error-list">
+                        {% for error in field.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Registrar</button>
+            <a href="{% url 'historial_movimientos' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
