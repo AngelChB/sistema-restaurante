@@ -35,3 +35,5 @@ local_settings.py
 .env.*.local
 # Ejemplo público sin credenciales reales
 !.env.example
+
+.ruff_cache/

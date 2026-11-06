@@ -27,9 +27,7 @@ class UnidadMedidaForm(forms.ModelForm):
     def clean_nombre(self):
         nombre = self.cleaned_data.get('nombre')
         if not nombre:
-            raise forms.ValidationError(
-                'El nombre de la unidad no puede estar vacío.'
-            )
+            raise forms.ValidationError('El nombre de la unidad no puede estar vacío.')
         unidades = UnidadMedida.objects.filter(nombre__iexact=nombre)
         if self.instance.pk:
             unidades = unidades.exclude(pk=self.instance.pk)
@@ -42,9 +40,7 @@ class UnidadMedidaForm(forms.ModelForm):
     def clean_abreviatura(self):
         abreviatura = self.cleaned_data.get('abreviatura')
         if not abreviatura:
-            raise forms.ValidationError(
-                'La abreviatura no puede estar vacía.'
-            )
+            raise forms.ValidationError('La abreviatura no puede estar vacía.')
         unidades = UnidadMedida.objects.filter(abreviatura__iexact=abreviatura)
         if self.instance.pk:
             unidades = unidades.exclude(pk=self.instance.pk)
@@ -106,25 +102,19 @@ class IngredienteForm(forms.ModelForm):
         if self.instance.pk:
             ingredientes = ingredientes.exclude(pk=self.instance.pk)
         if ingredientes.exists():
-            raise forms.ValidationError(
-                'Ya existe un ingrediente con ese nombre.'
-            )
+            raise forms.ValidationError('Ya existe un ingrediente con ese nombre.')
         return nombre
 
     def clean_stock_minimo(self):
         stock_minimo = self.cleaned_data.get('stock_minimo')
         if stock_minimo is not None and stock_minimo < 0:
-            raise forms.ValidationError(
-                'El stock mínimo no puede ser negativo.'
-            )
+            raise forms.ValidationError('El stock mínimo no puede ser negativo.')
         return stock_minimo
 
     def clean_costo_unitario(self):
         costo_unitario = self.cleaned_data.get('costo_unitario')
         if costo_unitario is not None and costo_unitario < 0:
-            raise forms.ValidationError(
-                'El costo unitario no puede ser negativo.'
-            )
+            raise forms.ValidationError('El costo unitario no puede ser negativo.')
         return costo_unitario
 
 
@@ -167,9 +157,7 @@ class MovimientoInventarioForm(forms.ModelForm):
     def clean_cantidad(self):
         cantidad = self.cleaned_data.get('cantidad')
         if cantidad is not None and cantidad <= 0:
-            raise forms.ValidationError(
-                'La cantidad debe ser mayor que cero.'
-            )
+            raise forms.ValidationError('La cantidad debe ser mayor que cero.')
         return cantidad
 
 
@@ -197,9 +185,11 @@ class RecetaProductoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['producto'].queryset = Producto.objects.filter(
-            disponible=True
-        ).select_related('categoria').order_by('nombre')
+        self.fields['producto'].queryset = (
+            Producto.objects.filter(disponible=True)
+            .select_related('categoria')
+            .order_by('nombre')
+        )
         self.fields['ingrediente'].queryset = Ingrediente.objects.filter(
             activo=True
         ).order_by('nombre')
@@ -207,9 +197,7 @@ class RecetaProductoForm(forms.ModelForm):
     def clean_cantidad(self):
         cantidad = self.cleaned_data.get('cantidad')
         if cantidad is not None and cantidad <= 0:
-            raise forms.ValidationError(
-                'La cantidad debe ser mayor que cero.'
-            )
+            raise forms.ValidationError('La cantidad debe ser mayor que cero.')
         return cantidad
 
     def clean(self):

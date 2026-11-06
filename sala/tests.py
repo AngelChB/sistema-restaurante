@@ -1,12 +1,11 @@
-from caja.models import Pago
-from pedidos.models import DetallePedido
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
+from caja.models import Pago
 from catalogo.models import Categoria, Producto
 from mesas.models import Mesa
-from pedidos.models import Pedido
+from pedidos.models import DetallePedido, Pedido
 from personal.models import PerfilEmpleado
 
 
@@ -50,8 +49,13 @@ class SalaViewsTests(TestCase):
         DetallePedido.objects.create(pedido=pedido, producto=self.producto, cantidad=1)
         pedido.estado = Pedido.Estado.ENTREGADO
         pedido.save()
-        Pago.objects.create(pedido=pedido, cajero=mesero, metodo='EFECTIVO',
-                            monto=pedido.total, monto_recibido=pedido.total)
+        Pago.objects.create(
+            pedido=pedido,
+            cajero=mesero,
+            metodo='EFECTIVO',
+            monto=pedido.total,
+            monto_recibido=pedido.total,
+        )
         pedido.refresh_from_db()
         return pedido
 
@@ -59,7 +63,7 @@ class SalaViewsTests(TestCase):
         response = self.client.get(reverse('panel_sala'))
         self.assertRedirects(
             response,
-            f"{reverse('login')}?next={reverse('panel_sala')}",
+            f'{reverse("login")}?next={reverse("panel_sala")}',
         )
 
     def test_usuario_autenticado_puede_abrir_el_panel(self):
@@ -68,15 +72,15 @@ class SalaViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_el_panel_muestra_pedidos_con_estado_listo(self):
-        pedido = self._crear_pedido(
-            self.mesero1, self.mesa1, Pedido.Estado.LISTO
-        )
+        pedido = self._crear_pedido(self.mesero1, self.mesa1, Pedido.Estado.LISTO)
         self.client.login(username='mesero1', password='test12345')
         response = self.client.get(reverse('panel_sala'))
         self.assertContains(response, f'Pedido {pedido.pk}')
         self.assertContains(response, 'Marcar como entregado')
 
-    def test_el_panel_no_muestra_pedidos_abierto_en_preparacion_pagado_ni_cancelado(self):
+    def test_el_panel_no_muestra_pedidos_abierto_en_preparacion_pagado_ni_cancelado(
+        self,
+    ):
         p1 = self._crear_pedido(self.mesero1, self.mesa1, Pedido.Estado.ABIERTO)
         p2 = self._crear_pedido(self.mesero1, self.mesa2, Pedido.Estado.EN_PREPARACION)
         p3 = self._crear_pedido(self.mesero1, self.mesa3, Pedido.Estado.PAGADO)
@@ -105,19 +109,13 @@ class SalaViewsTests(TestCase):
         self.assertContains(response, f'Pedido {p2.pk}')
 
     def test_la_ruta_de_entrega_no_acepta_solicitudes_get(self):
-        pedido = self._crear_pedido(
-            self.mesero1, self.mesa1, Pedido.Estado.LISTO
-        )
+        pedido = self._crear_pedido(self.mesero1, self.mesa1, Pedido.Estado.LISTO)
         self.client.login(username='mesero1', password='test12345')
-        response = self.client.get(
-            reverse('marcar_pedido_entregado', args=[pedido.pk])
-        )
+        response = self.client.get(reverse('marcar_pedido_entregado', args=[pedido.pk]))
         self.assertEqual(response.status_code, 405)
 
     def test_se_puede_cambiar_listo_a_entregado(self):
-        pedido = self._crear_pedido(
-            self.mesero1, self.mesa1, Pedido.Estado.LISTO
-        )
+        pedido = self._crear_pedido(self.mesero1, self.mesa1, Pedido.Estado.LISTO)
         self.client.login(username='mesero1', password='test12345')
         response = self.client.post(
             reverse('marcar_pedido_entregado', args=[pedido.pk])
@@ -127,9 +125,7 @@ class SalaViewsTests(TestCase):
         self.assertEqual(pedido.estado, Pedido.Estado.ENTREGADO)
 
     def test_no_se_puede_cambiar_abierto_directamente_a_entregado(self):
-        pedido = self._crear_pedido(
-            self.mesero1, self.mesa1, Pedido.Estado.ABIERTO
-        )
+        pedido = self._crear_pedido(self.mesero1, self.mesa1, Pedido.Estado.ABIERTO)
         self.client.login(username='mesero1', password='test12345')
         response = self.client.post(
             reverse('marcar_pedido_entregado', args=[pedido.pk])
@@ -139,9 +135,7 @@ class SalaViewsTests(TestCase):
         self.assertEqual(pedido.estado, Pedido.Estado.ABIERTO)
 
     def test_un_mesero_no_puede_entregar_el_pedido_de_otro_mesero(self):
-        pedido = self._crear_pedido(
-            self.mesero2, self.mesa1, Pedido.Estado.LISTO
-        )
+        pedido = self._crear_pedido(self.mesero2, self.mesa1, Pedido.Estado.LISTO)
         self.client.login(username='mesero1', password='test12345')
         response = self.client.post(
             reverse('marcar_pedido_entregado', args=[pedido.pk])
@@ -151,9 +145,7 @@ class SalaViewsTests(TestCase):
         self.assertEqual(pedido.estado, Pedido.Estado.LISTO)
 
     def test_un_usuario_staff_si_puede_entregar_el_pedido_de_otro_mesero(self):
-        pedido = self._crear_pedido(
-            self.mesero2, self.mesa1, Pedido.Estado.LISTO
-        )
+        pedido = self._crear_pedido(self.mesero2, self.mesa1, Pedido.Estado.LISTO)
         self.client.login(username='admin1', password='test12345')
         response = self.client.post(
             reverse('marcar_pedido_entregado', args=[pedido.pk])

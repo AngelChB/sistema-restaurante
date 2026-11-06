@@ -164,3 +164,16 @@ docs/         Capturas y guion de demostración
 Proyecto de portafolio con ejecución local. Todavía no integra facturación electrónica, pasarelas de pago, devoluciones ni un flujo completo de mermas. Registrar un pago no ejecuta una transacción bancaria. Un despliegue público requiere configuración de producción, servidor de aplicación, estáticos y copias de seguridad; no se debe publicar con `runserver` ni con las claves de demostración.
 
 No se ha añadido una licencia de distribución. El archivo `.env`, las bases de datos y las credenciales reales no deben subirse al repositorio.
+
+
+## Estilo de código
+
+El formato e imports de Python se mantienen con Ruff. Es una herramienta de desarrollo y no se necesita para ejecutar el restaurante.
+
+```powershell
+python -m pip install -r requirements-dev.txt
+python -m ruff check .
+python -m ruff format --check .
+```
+
+Para aplicar formato: `python -m ruff format .`. La configuración está en `pyproject.toml`; se excluyen el entorno virtual y las migraciones.

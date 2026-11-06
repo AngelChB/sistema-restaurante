@@ -1,4 +1,3 @@
-from core.paginacion import paginar
 from decimal import Decimal
 
 from django.contrib import messages
@@ -8,6 +7,7 @@ from django.db.models import Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
+from core.paginacion import paginar
 from pedidos.models import Pedido
 from personal.models import PerfilEmpleado
 from personal.permisos import rol_requerido
@@ -21,9 +21,13 @@ ROLES_CAJA = [PerfilEmpleado.Rol.ADMINISTRADOR, PerfilEmpleado.Rol.CAJERO]
 @rol_requerido(*ROLES_CAJA)
 def panel_caja(request):
     hoy = timezone.localdate()
-    cierre_del_dia = CierreCaja.objects.filter(
-        fecha_operacion=hoy,
-    ).select_related('responsable').first()
+    cierre_del_dia = (
+        CierreCaja.objects.filter(
+            fecha_operacion=hoy,
+        )
+        .select_related('responsable')
+        .first()
+    )
     pagos = Pago.objects.filter(
         fecha_pago__date=hoy,
     ).select_related('pedido__mesa', 'cajero')
@@ -35,20 +39,28 @@ def panel_caja(request):
         (Pago.Metodo.YAPE, total_dia_metodo(pagos, Pago.Metodo.YAPE)),
         (Pago.Metodo.PLIN, total_dia_metodo(pagos, Pago.Metodo.PLIN)),
     ]
-    pendientes = Pedido.objects.filter(
-        estado=Pedido.Estado.ENTREGADO,
-        pago__isnull=True,
-    ).select_related('mesa', 'mesero').order_by('fecha_creacion')
+    pendientes = (
+        Pedido.objects.filter(
+            estado=Pedido.Estado.ENTREGADO,
+            pago__isnull=True,
+        )
+        .select_related('mesa', 'mesero')
+        .order_by('fecha_creacion')
+    )
 
-    return render(request, 'caja/panel.html', {
-        'hoy': hoy,
-        'cierre_del_dia': cierre_del_dia,
-        'pagos': paginar(request, pagos, 'pagina_pagos'),
-        'total_dia': total_dia,
-        'cantidad_pagos': pagos.count(),
-        'totales_por_metodo': totales_por_metodo,
-        'pendientes': paginar(request, pendientes, 'pagina_pendientes'),
-    })
+    return render(
+        request,
+        'caja/panel.html',
+        {
+            'hoy': hoy,
+            'cierre_del_dia': cierre_del_dia,
+            'pagos': paginar(request, pagos, 'pagina_pagos'),
+            'total_dia': total_dia,
+            'cantidad_pagos': pagos.count(),
+            'totales_por_metodo': totales_por_metodo,
+            'pendientes': paginar(request, pendientes, 'pagina_pendientes'),
+        },
+    )
 
 
 def total_dia_metodo(pagos, metodo):
@@ -57,9 +69,7 @@ def total_dia_metodo(pagos, metodo):
 
 
 def caja_cerrada_hoy():
-    return CierreCaja.objects.filter(
-        fecha_operacion=timezone.localdate()
-    ).exists()
+    return CierreCaja.objects.filter(fecha_operacion=timezone.localdate()).exists()
 
 
 @rol_requerido(*ROLES_CAJA)
@@ -94,10 +104,14 @@ def registrar_pago(request, pedido_id):
     else:
         form = PagoForm(instance=pago)
 
-    return render(request, 'caja/formulario_pago.html', {
-        'form': form,
-        'pedido': pedido,
-    })
+    return render(
+        request,
+        'caja/formulario_pago.html',
+        {
+            'form': form,
+            'pedido': pedido,
+        },
+    )
 
 
 @rol_requerido(*ROLES_CAJA)
@@ -143,11 +157,15 @@ def cerrar_caja(request):
     else:
         form = CierreCajaForm(instance=cierre)
 
-    return render(request, 'caja/cerrar_caja.html', {
-        'form': form,
-        'hoy': hoy,
-        'resumen': resumen,
-    })
+    return render(
+        request,
+        'caja/cerrar_caja.html',
+        {
+            'form': form,
+            'hoy': hoy,
+            'resumen': resumen,
+        },
+    )
 
 
 @rol_requerido(*ROLES_CAJA)
@@ -157,7 +175,11 @@ def detalle_cierre(request, pk):
         pk=pk,
     )
     pagos = cierre.pagos_del_dia()
-    return render(request, 'caja/detalle_cierre.html', {
-        'cierre': cierre,
-        'pagos': pagos,
-    })
+    return render(
+        request,
+        'caja/detalle_cierre.html',
+        {
+            'cierre': cierre,
+            'pagos': pagos,
+        },
+    )

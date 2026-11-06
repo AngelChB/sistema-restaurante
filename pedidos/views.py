@@ -1,4 +1,3 @@
-from core.paginacion import paginar
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
@@ -6,6 +5,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from core.paginacion import paginar
 from inventario.services import iniciar_preparacion_con_descuento
 from mesas.models import Mesa
 from personal.models import PerfilEmpleado
@@ -44,12 +44,16 @@ def lista_pedidos(request):
         else:
             pedidos = pedidos.filter(mesa__numero__icontains=buscar)
 
-    return render(request, 'pedidos/lista.html', {
-        'pedidos': paginar(request, pedidos),
-        'estado': estado,
-        'buscar': buscar,
-        'estados': Pedido.Estado.choices,
-    })
+    return render(
+        request,
+        'pedidos/lista.html',
+        {
+            'pedidos': paginar(request, pedidos),
+            'estado': estado,
+            'buscar': buscar,
+            'estados': Pedido.Estado.choices,
+        },
+    )
 
 
 @rol_requerido(*ROLES_PEDIDOS)
@@ -84,11 +88,15 @@ def crear_pedido(request):
         form = PedidoForm(initial=initial)
         formset = DetallePedidoFormSet(instance=Pedido(), prefix='detalles')
 
-    return render(request, 'pedidos/formulario.html', {
-        'form': form,
-        'formset': formset,
-        'titulo': 'Nuevo pedido',
-    })
+    return render(
+        request,
+        'pedidos/formulario.html',
+        {
+            'form': form,
+            'formset': formset,
+            'titulo': 'Nuevo pedido',
+        },
+    )
 
 
 @rol_requerido(*ROLES_PEDIDOS)
@@ -104,10 +112,14 @@ def detalle_pedido(request, pk):
         and pedido.mesero != request.user
     ):
         raise PermissionDenied
-    return render(request, 'pedidos/detalle.html', {
-        'pedido': pedido,
-        'estados_siguientes': TRANSICIONES.get(pedido.estado, []),
-    })
+    return render(
+        request,
+        'pedidos/detalle.html',
+        {
+            'pedido': pedido,
+            'estados_siguientes': TRANSICIONES.get(pedido.estado, []),
+        },
+    )
 
 
 @rol_requerido(*ROLES_PEDIDOS)
@@ -134,7 +146,9 @@ def cambiar_estado_pedido(request, pk):
             pedido.estado = nuevo_estado
             pedido.save()
     except ValidationError as error:
-        mensaje = error.messages[0] if error.messages else 'No se pudo cambiar el estado.'
+        mensaje = (
+            error.messages[0] if error.messages else 'No se pudo cambiar el estado.'
+        )
         messages.error(request, mensaje)
     else:
         messages.success(request, 'Estado del pedido actualizado correctamente.')

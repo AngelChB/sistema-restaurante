@@ -1,13 +1,17 @@
-from caja.models import Pago
-from pedidos.models import DetallePedido
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
+from caja.models import Pago
 from catalogo.models import Categoria, Producto
-from inventario.models import Ingrediente, MovimientoInventario, RecetaProducto, UnidadMedida
+from inventario.models import (
+    Ingrediente,
+    MovimientoInventario,
+    RecetaProducto,
+    UnidadMedida,
+)
 from mesas.models import Mesa
 from pedidos.models import DetallePedido, Pedido
 from personal.models import PerfilEmpleado
@@ -16,9 +20,7 @@ from personal.models import PerfilEmpleado
 class CocinaViewsTests(TestCase):
     def setUp(self):
         User = get_user_model()
-        self.user = User.objects.create_user(
-            username='mesero1', password='test12345'
-        )
+        self.user = User.objects.create_user(username='mesero1', password='test12345')
         self.cocinero = User.objects.create_user(
             username='cocinero', password='test12345'
         )
@@ -32,9 +34,7 @@ class CocinaViewsTests(TestCase):
             precio='12.50',
             disponible=True,
         )
-        self.unidad = UnidadMedida.objects.create(
-            nombre='Kilogramo', abreviatura='kg'
-        )
+        self.unidad = UnidadMedida.objects.create(nombre='Kilogramo', abreviatura='kg')
         self.harina = Ingrediente.objects.create(
             nombre='Harina',
             unidad_medida=self.unidad,
@@ -51,13 +51,20 @@ class CocinaViewsTests(TestCase):
 
     def _crear_pedido(self, estado):
         if estado != Pedido.Estado.PAGADO:
-            return Pedido.objects.create(mesa=self.mesa, mesero=self.user, estado=estado)
+            return Pedido.objects.create(
+                mesa=self.mesa, mesero=self.user, estado=estado
+            )
         pedido = Pedido.objects.create(mesa=self.mesa, mesero=self.user)
         DetallePedido.objects.create(pedido=pedido, producto=self.producto, cantidad=1)
         pedido.estado = Pedido.Estado.ENTREGADO
         pedido.save()
-        Pago.objects.create(pedido=pedido, cajero=self.user, metodo='EFECTIVO',
-                            monto=pedido.total, monto_recibido=pedido.total)
+        Pago.objects.create(
+            pedido=pedido,
+            cajero=self.user,
+            metodo='EFECTIVO',
+            monto=pedido.total,
+            monto_recibido=pedido.total,
+        )
         pedido.refresh_from_db()
         return pedido
 
@@ -72,7 +79,7 @@ class CocinaViewsTests(TestCase):
         response = self.client.get(reverse('panel_cocina'))
         self.assertRedirects(
             response,
-            f"{reverse('login')}?next={reverse('panel_cocina')}",
+            f'{reverse("login")}?next={reverse("panel_cocina")}',
         )
 
     def test_usuario_autenticado_puede_abrir_el_panel(self):
@@ -214,9 +221,7 @@ class CocinaViewsTests(TestCase):
             follow=True,
         )
         mensajes = [str(m) for m in response.context.get('messages')]
-        self.assertTrue(
-            any('suficiente stock' in mensaje for mensaje in mensajes)
-        )
+        self.assertTrue(any('suficiente stock' in mensaje for mensaje in mensajes))
         pedido.refresh_from_db()
         self.assertEqual(pedido.estado, Pedido.Estado.ABIERTO)
         self.assertEqual(MovimientoInventario.objects.count(), 0)
@@ -226,9 +231,7 @@ class CocinaViewsTests(TestCase):
     def test_cambiar_en_preparacion_a_listo_no_vuelve_a_descontar(self):
         pedido = self._crear_pedido_abierto_con_detalle()
         self.client.login(username='cocinero', password='test12345')
-        self.client.post(
-            reverse('actualizar_estado_cocina', args=[pedido.pk])
-        )
+        self.client.post(reverse('actualizar_estado_cocina', args=[pedido.pk]))
         self.harina.refresh_from_db()
         stock_descontado = self.harina.stock_actual
         response = self.client.post(
@@ -239,6 +242,4 @@ class CocinaViewsTests(TestCase):
         self.assertEqual(pedido.estado, Pedido.Estado.LISTO)
         self.harina.refresh_from_db()
         self.assertEqual(self.harina.stock_actual, stock_descontado)
-        self.assertEqual(
-            MovimientoInventario.objects.filter(pedido=pedido).count(), 1
-        )
+        self.assertEqual(MovimientoInventario.objects.filter(pedido=pedido).count(), 1)

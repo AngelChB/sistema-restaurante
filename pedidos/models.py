@@ -58,17 +58,24 @@ class Pedido(models.Model):
 
     def validate(self):
         from caja.models import Pago
+
         pago = Pago.objects.filter(pedido_id=self.pk).first() if self.pk else None
         if self.estado == self.Estado.PAGADO and (
             pago is None or pago.monto != self.total
         ):
-            raise ValidationError('Un pedido solo puede figurar pagado con un cobro válido por su total.')
+            raise ValidationError(
+                'Un pedido solo puede figurar pagado con un cobro válido por su total.'
+            )
         if pago is not None and self.estado != self.Estado.PAGADO:
-            raise ValidationError('Un pedido con un cobro registrado debe conservar el estado pagado.')
+            raise ValidationError(
+                'Un pedido con un cobro registrado debe conservar el estado pagado.'
+            )
         if self.pk and self.estado == self.Estado.ABIERTO:
             anterior = Pedido.objects.get(pk=self.pk)
             if anterior.estado != self.Estado.ABIERTO:
-                raise ValidationError('Un pedido que ya salió de abierto no puede reabrirse para editar sus productos.')
+                raise ValidationError(
+                    'Un pedido que ya salió de abierto no puede reabrirse para editar sus productos.'
+                )
         if self.estado not in self.ESTADOS_ACTIVOS:
             return
         if not self.mesa.activo:
@@ -86,9 +93,7 @@ class Pedido(models.Model):
         if self.pk:
             pedidos_activos = pedidos_activos.exclude(pk=self.pk)
         if pedidos_activos.exists():
-            raise ValidationError(
-                'Ya existe un pedido activo en esta mesa.'
-            )
+            raise ValidationError('Ya existe un pedido activo en esta mesa.')
 
     def _tiene_otros_pedidos_activos(self, mesa_id):
         pedidos_activos = Pedido.objects.filter(
@@ -103,16 +108,21 @@ class Pedido(models.Model):
         with transaction.atomic():
             mesa_anterior_id = None
             if self.pk:
-                mesa_anterior_id = Pedido.objects.select_for_update().values_list(
-                    'mesa_id', flat=True
-                ).get(pk=self.pk)
+                mesa_anterior_id = (
+                    Pedido.objects.select_for_update()
+                    .values_list('mesa_id', flat=True)
+                    .get(pk=self.pk)
+                )
 
             mesas_ids = {self.mesa_id}
             if mesa_anterior_id:
                 mesas_ids.add(mesa_anterior_id)
-            mesas = {m.pk: m for m in Mesa.objects.select_for_update().filter(
-                pk__in=mesas_ids
-            ).order_by('pk')}
+            mesas = {
+                m.pk: m
+                for m in Mesa.objects.select_for_update()
+                .filter(pk__in=mesas_ids)
+                .order_by('pk')
+            }
             self.mesa = mesas[self.mesa_id]
             self.validate()
             super().save(*args, **kwargs)
@@ -186,14 +196,19 @@ class DetallePedido(models.Model):
         pedidos_ids = {self.pedido_id}
         if self.pk:
             pedidos_ids.add(
-                DetallePedido.objects.values_list('pedido_id', flat=True).get(pk=self.pk)
+                DetallePedido.objects.values_list('pedido_id', flat=True).get(
+                    pk=self.pk
+                )
             )
-        pedidos = list(Pedido.objects.select_for_update().filter(
-            pk__in=pedidos_ids
-        ).order_by('pk'))
-        if any(p.estado != Pedido.Estado.ABIERTO or hasattr(p, 'pago')
-               for p in pedidos):
-            raise ValidationError('Solo se pueden cambiar productos y cantidades mientras el pedido está abierto.')
+        pedidos = list(
+            Pedido.objects.select_for_update().filter(pk__in=pedidos_ids).order_by('pk')
+        )
+        if any(
+            p.estado != Pedido.Estado.ABIERTO or hasattr(p, 'pago') for p in pedidos
+        ):
+            raise ValidationError(
+                'Solo se pueden cambiar productos y cantidades mientras el pedido está abierto.'
+            )
 
     def save(self, *args, **kwargs):
         with transaction.atomic():

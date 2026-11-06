@@ -25,7 +25,9 @@ class CategoriaForm(forms.ModelForm):
     def clean_nombre(self):
         nombre = self.cleaned_data.get('nombre')
         if not nombre:
-            raise forms.ValidationError('El nombre de la categoría no puede estar vacío.')
+            raise forms.ValidationError(
+                'El nombre de la categoría no puede estar vacío.'
+            )
         categorias = Categoria.objects.filter(nombre__iexact=nombre)
         if self.instance.pk:
             categorias = categorias.exclude(pk=self.instance.pk)

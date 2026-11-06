@@ -3,8 +3,6 @@ from functools import wraps
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 
-from .models import PerfilEmpleado
-
 
 def obtener_rol_usuario(user):
     if user is None or not user.is_authenticated:

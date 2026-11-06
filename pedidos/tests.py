@@ -14,9 +14,7 @@ from personal.models import PerfilEmpleado
 class PedidoModelTests(TestCase):
     def setUp(self):
         User = get_user_model()
-        self.mesero = User.objects.create_user(
-            username='mesero1', password='test12345'
-        )
+        self.mesero = User.objects.create_user(username='mesero1', password='test12345')
         self.categoria = Categoria.objects.create(nombre='Bebidas')
         self.producto = Producto.objects.create(
             categoria=self.categoria,
@@ -61,8 +59,14 @@ class PedidoModelTests(TestCase):
         pedido.estado = Pedido.Estado.ENTREGADO
         pedido.save()
         from caja.models import Pago
-        Pago.objects.create(pedido=pedido, cajero=self.mesero, metodo='EFECTIVO',
-                            monto=pedido.total, monto_recibido=pedido.total)
+
+        Pago.objects.create(
+            pedido=pedido,
+            cajero=self.mesero,
+            metodo='EFECTIVO',
+            monto=pedido.total,
+            monto_recibido=pedido.total,
+        )
         self.mesa.refresh_from_db()
         self.assertEqual(self.mesa.estado, Mesa.Estado.LIBRE)
 
@@ -97,12 +101,8 @@ class PedidoModelTests(TestCase):
 class PedidoViewsTests(TestCase):
     def setUp(self):
         User = get_user_model()
-        self.user = User.objects.create_user(
-            username='mesero1', password='test12345'
-        )
-        PerfilEmpleado.objects.create(
-            usuario=self.user, rol=PerfilEmpleado.Rol.MESERO
-        )
+        self.user = User.objects.create_user(username='mesero1', password='test12345')
+        PerfilEmpleado.objects.create(usuario=self.user, rol=PerfilEmpleado.Rol.MESERO)
         self.categoria = Categoria.objects.create(nombre='Bebidas')
         self.producto = Producto.objects.create(
             categoria=self.categoria,
@@ -129,7 +129,7 @@ class PedidoViewsTests(TestCase):
         response = self.client.get(reverse('lista_pedidos'))
         self.assertRedirects(
             response,
-            f"{reverse('login')}?next={reverse('lista_pedidos')}",
+            f'{reverse("login")}?next={reverse("lista_pedidos")}',
         )
 
     def test_usuario_autenticado_puede_ver_la_lista_de_pedidos(self):
@@ -177,9 +177,7 @@ class PedidoViewsTests(TestCase):
             reverse('cambiar_estado_pedido', args=[pedido.pk]),
             {'estado': Pedido.Estado.CANCELADO},
         )
-        self.assertRedirects(
-            response, reverse('detalle_pedido', args=[pedido.pk])
-        )
+        self.assertRedirects(response, reverse('detalle_pedido', args=[pedido.pk]))
         pedido.refresh_from_db()
         self.assertEqual(pedido.estado, Pedido.Estado.CANCELADO)
 

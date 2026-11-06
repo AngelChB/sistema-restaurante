@@ -20,9 +20,7 @@ class InventarioModelTests(TestCase):
         self.usuario = User.objects.create_user(
             username='usuario1', password='test12345'
         )
-        self.unidad = UnidadMedida.objects.create(
-            nombre='Kilogramo', abreviatura='kg'
-        )
+        self.unidad = UnidadMedida.objects.create(nombre='Kilogramo', abreviatura='kg')
         self.ingrediente = Ingrediente.objects.create(
             nombre='Harina',
             unidad_medida=self.unidad,
@@ -61,17 +59,13 @@ class InventarioModelTests(TestCase):
         self.assertEqual(self.ingrediente.stock_actual, Decimal('30'))
 
     def test_un_ajuste_positivo_aumenta_el_stock(self):
-        self._crear_movimiento(
-            MovimientoInventario.Tipo.AJUSTE_POSITIVO, Decimal('15')
-        )
+        self._crear_movimiento(MovimientoInventario.Tipo.AJUSTE_POSITIVO, Decimal('15'))
         self.ingrediente.refresh_from_db()
         self.assertEqual(self.ingrediente.stock_actual, Decimal('15'))
 
     def test_un_ajuste_negativo_disminuye_el_stock(self):
         self._crear_movimiento(MovimientoInventario.Tipo.ENTRADA, Decimal('40'))
-        self._crear_movimiento(
-            MovimientoInventario.Tipo.AJUSTE_NEGATIVO, Decimal('10')
-        )
+        self._crear_movimiento(MovimientoInventario.Tipo.AJUSTE_NEGATIVO, Decimal('10'))
         self.ingrediente.refresh_from_db()
         self.assertEqual(self.ingrediente.stock_actual, Decimal('30'))
 
@@ -94,9 +88,7 @@ class InventarioModelTests(TestCase):
     def test_no_se_permite_cantidad_cero_ni_negativa(self):
         for cantidad in (Decimal('0'), Decimal('-1')):
             with self.assertRaises(ValidationError):
-                self._crear_movimiento(
-                    MovimientoInventario.Tipo.ENTRADA, cantidad
-                )
+                self._crear_movimiento(MovimientoInventario.Tipo.ENTRADA, cantidad)
         self.ingrediente.refresh_from_db()
         self.assertEqual(self.ingrediente.stock_actual, Decimal('0'))
         self.assertEqual(MovimientoInventario.objects.count(), 0)
@@ -107,9 +99,7 @@ class InventarioModelTests(TestCase):
         )
         self.assertEqual(entrada.stock_anterior, Decimal('0'))
         self.assertEqual(entrada.stock_resultante, Decimal('50'))
-        salida = self._crear_movimiento(
-            MovimientoInventario.Tipo.SALIDA, Decimal('20')
-        )
+        salida = self._crear_movimiento(MovimientoInventario.Tipo.SALIDA, Decimal('20'))
         self.assertEqual(salida.stock_anterior, Decimal('50'))
         self.assertEqual(salida.stock_resultante, Decimal('30'))
 
@@ -122,9 +112,7 @@ class InventarioModelTests(TestCase):
             movimiento.save()
 
     def test_un_movimiento_no_puede_eliminarse(self):
-        self._crear_movimiento(
-            MovimientoInventario.Tipo.ENTRADA, Decimal('10')
-        )
+        self._crear_movimiento(MovimientoInventario.Tipo.ENTRADA, Decimal('10'))
         movimiento = MovimientoInventario.objects.get()
         with self.assertRaises(ValidationError):
             movimiento.delete()
@@ -199,27 +187,19 @@ class InventarioViewsTests(TestCase):
         self.superusuario = User.objects.create_user(
             username='super1', password='test12345', is_superuser=True
         )
-        self.mesero = User.objects.create_user(
-            username='mesero1', password='test12345'
-        )
+        self.mesero = User.objects.create_user(username='mesero1', password='test12345')
         PerfilEmpleado.objects.create(
             usuario=self.mesero, rol=PerfilEmpleado.Rol.MESERO
         )
-        self.cajero = User.objects.create_user(
-            username='cajero1', password='test12345'
-        )
+        self.cajero = User.objects.create_user(username='cajero1', password='test12345')
         PerfilEmpleado.objects.create(
             usuario=self.cajero, rol=PerfilEmpleado.Rol.CAJERO
         )
-        self.cocina = User.objects.create_user(
-            username='cocina1', password='test12345'
-        )
+        self.cocina = User.objects.create_user(username='cocina1', password='test12345')
         PerfilEmpleado.objects.create(
             usuario=self.cocina, rol=PerfilEmpleado.Rol.COCINA
         )
-        self.unidad = UnidadMedida.objects.create(
-            nombre='Kilogramo', abreviatura='kg'
-        )
+        self.unidad = UnidadMedida.objects.create(nombre='Kilogramo', abreviatura='kg')
         self.ingrediente = Ingrediente.objects.create(
             nombre='Harina',
             unidad_medida=self.unidad,
@@ -248,7 +228,7 @@ class InventarioViewsTests(TestCase):
         response = self.client.get(reverse('panel_inventario'))
         self.assertRedirects(
             response,
-            f"{reverse('login')}?next={reverse('panel_inventario')}",
+            f'{reverse("login")}?next={reverse("panel_inventario")}',
         )
 
     def test_mesero_y_cajero_no_pueden_ver_el_panel(self):
@@ -394,17 +374,13 @@ class InventarioViewsTests(TestCase):
             stock_minimo=Decimal('10'),
         )
         self.client.login(username='admin1', password='test12345')
-        response = self.client.get(
-            reverse('lista_ingredientes'), {'stock': 'bajo'}
-        )
+        response = self.client.get(reverse('lista_ingredientes'), {'stock': 'bajo'})
         self.assertContains(response, 'Harina')
         self.assertNotContains(response, 'Azúcar')
 
     def test_la_busqueda_por_nombre_funciona(self):
         self.client.login(username='cocina1', password='test12345')
-        response = self.client.get(
-            reverse('lista_ingredientes'), {'buscar': 'Har'}
-        )
+        response = self.client.get(reverse('lista_ingredientes'), {'buscar': 'Har'})
         self.assertContains(response, 'Harina')
 
     def test_el_historial_muestra_stock_anterior_y_resultante(self):
@@ -506,12 +482,8 @@ class DescuentoPreparacionTests(TestCase):
         PerfilEmpleado.objects.create(
             usuario=self.cocinero, rol=PerfilEmpleado.Rol.COCINA
         )
-        self.mesero = User.objects.create_user(
-            username='mesero1', password='test12345'
-        )
-        self.unidad = UnidadMedida.objects.create(
-            nombre='Kilogramo', abreviatura='kg'
-        )
+        self.mesero = User.objects.create_user(username='mesero1', password='test12345')
+        self.unidad = UnidadMedida.objects.create(nombre='Kilogramo', abreviatura='kg')
         self.harina = Ingrediente.objects.create(
             nombre='Harina',
             unidad_medida=self.unidad,
@@ -571,10 +543,12 @@ class DescuentoPreparacionTests(TestCase):
     def test_dos_productos_con_el_mismo_ingrediente_generan_un_solo_movimiento(self):
         self._receta(self.cafe, self.harina, Decimal('0.5'))
         self._receta(self.sandwich, self.harina, Decimal('1'))
-        pedido = self._crear_pedido_abierto([
-            (self.cafe, 2),
-            (self.sandwich, 3),
-        ])
+        pedido = self._crear_pedido_abierto(
+            [
+                (self.cafe, 2),
+                (self.sandwich, 3),
+            ]
+        )
         iniciar_preparacion_con_descuento(pedido.pk, self.cocinero)
         movimientos = MovimientoInventario.objects.filter(pedido=pedido)
         self.assertEqual(movimientos.count(), 1)
@@ -587,10 +561,12 @@ class DescuentoPreparacionTests(TestCase):
         self._receta(self.cafe, self.harina, Decimal('0.5'))
         self._receta(self.sandwich, self.harina, Decimal('1'))
         self._receta(self.sandwich, self.azucar, Decimal('0.25'))
-        pedido = self._crear_pedido_abierto([
-            (self.cafe, 1),
-            (self.sandwich, 1),
-        ])
+        pedido = self._crear_pedido_abierto(
+            [
+                (self.cafe, 1),
+                (self.sandwich, 1),
+            ]
+        )
         iniciar_preparacion_con_descuento(pedido.pk, self.cocinero)
         movimientos = MovimientoInventario.objects.filter(pedido=pedido)
         self.assertEqual(movimientos.count(), 2)

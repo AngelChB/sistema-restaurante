@@ -27,17 +27,24 @@ class Mesa(models.Model):
 
     def __str__(self):
         return f'Mesa {self.numero} - {self.get_estado_display()}'
+
     def clean(self):
         super().clean()
         if not self.pk:
             return
         from pedidos.models import Pedido
 
-        if Pedido.objects.filter(mesa_id=self.pk, estado__in=Pedido.ESTADOS_ACTIVOS).exists():
+        if Pedido.objects.filter(
+            mesa_id=self.pk, estado__in=Pedido.ESTADOS_ACTIVOS
+        ).exists():
             errores = {}
             if not self.activo:
-                errores['activo'] = 'No puedes desactivar una mesa con un pedido activo.'
+                errores['activo'] = (
+                    'No puedes desactivar una mesa con un pedido activo.'
+                )
             if self.estado != self.Estado.OCUPADA:
-                errores['estado'] = 'Una mesa con un pedido activo debe permanecer ocupada.'
+                errores['estado'] = (
+                    'Una mesa con un pedido activo debe permanecer ocupada.'
+                )
             if errores:
                 raise ValidationError(errores)

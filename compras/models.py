@@ -93,9 +93,13 @@ class Compra(models.Model):
             if self.pk:
                 anterior = Compra.objects.select_for_update().get(pk=self.pk)
                 if anterior.estado != self.Estado.BORRADOR:
-                    raise ValidationError('No se puede modificar una compra finalizada.')
+                    raise ValidationError(
+                        'No se puede modificar una compra finalizada.'
+                    )
             if self.estado == self.Estado.RECIBIDA and not desde_recepcion:
-                raise ValidationError('Utiliza la recepción de compras para actualizar el inventario.')
+                raise ValidationError(
+                    'Utiliza la recepción de compras para actualizar el inventario.'
+                )
             if anterior is None and self.estado != self.Estado.BORRADOR:
                 raise ValidationError('Las compras nuevas deben estar en borrador.')
             self.validate()
@@ -143,21 +147,27 @@ class DetalleCompra(models.Model):
 
     def clean(self):
         if self.cantidad is not None and self.cantidad <= 0:
-            raise ValidationError({
-                'cantidad': 'La cantidad debe ser mayor que cero.'
-            })
+            raise ValidationError({'cantidad': 'La cantidad debe ser mayor que cero.'})
         if self.costo_unitario is not None and self.costo_unitario < 0:
-            raise ValidationError({
-                'costo_unitario': 'El costo unitario no puede ser negativo.'
-            })
+            raise ValidationError(
+                {'costo_unitario': 'El costo unitario no puede ser negativo.'}
+            )
 
     def _bloquear_compras_finalizadas(self):
         ids = {self.compra_id}
         if self.pk:
-            ids.add(DetalleCompra.objects.values_list('compra_id', flat=True).get(pk=self.pk))
-        compras = list(Compra.objects.select_for_update().filter(pk__in=ids).order_by('pk'))
+            ids.add(
+                DetalleCompra.objects.values_list('compra_id', flat=True).get(
+                    pk=self.pk
+                )
+            )
+        compras = list(
+            Compra.objects.select_for_update().filter(pk__in=ids).order_by('pk')
+        )
         if any(c.estado != Compra.Estado.BORRADOR for c in compras):
-            raise ValidationError('Solo se pueden cambiar detalles de compras en borrador.')
+            raise ValidationError(
+                'Solo se pueden cambiar detalles de compras en borrador.'
+            )
 
     def save(self, *args, **kwargs):
         with transaction.atomic():

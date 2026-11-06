@@ -1,7 +1,7 @@
-from core.filtros import filtro_id, filtro_fecha
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 
+from core.filtros import filtro_id
 from personal.models import PerfilEmpleado
 from personal.permisos import rol_requerido
 
@@ -33,13 +33,17 @@ def lista_productos(request):
     productos = productos.order_by('categoria__nombre', 'nombre')
     categorias = Categoria.objects.filter(activo=True).order_by('nombre')
 
-    return render(request, 'catalogo/lista_productos.html', {
-        'productos': productos,
-        'categorias': categorias,
-        'buscar': buscar,
-        'categoria_id': categoria_id,
-        'disponible': disponible,
-    })
+    return render(
+        request,
+        'catalogo/lista_productos.html',
+        {
+            'productos': productos,
+            'categorias': categorias,
+            'buscar': buscar,
+            'categoria_id': categoria_id,
+            'disponible': disponible,
+        },
+    )
 
 
 @rol_requerido(PerfilEmpleado.Rol.ADMINISTRADOR)
@@ -52,10 +56,14 @@ def crear_producto(request):
             return redirect('lista_productos')
     else:
         form = ProductoForm()
-    return render(request, 'catalogo/formulario_producto.html', {
-        'form': form,
-        'titulo': 'Nuevo producto',
-    })
+    return render(
+        request,
+        'catalogo/formulario_producto.html',
+        {
+            'form': form,
+            'titulo': 'Nuevo producto',
+        },
+    )
 
 
 @rol_requerido(PerfilEmpleado.Rol.ADMINISTRADOR)
@@ -69,18 +77,26 @@ def editar_producto(request, pk):
             return redirect('lista_productos')
     else:
         form = ProductoForm(instance=producto)
-    return render(request, 'catalogo/formulario_producto.html', {
-        'form': form,
-        'titulo': 'Editar producto',
-    })
+    return render(
+        request,
+        'catalogo/formulario_producto.html',
+        {
+            'form': form,
+            'titulo': 'Editar producto',
+        },
+    )
 
 
 @rol_requerido(*ROL_CATALOGO)
 def lista_categorias(request):
     categorias = Categoria.objects.order_by('nombre')
-    return render(request, 'catalogo/lista_categorias.html', {
-        'categorias': categorias,
-    })
+    return render(
+        request,
+        'catalogo/lista_categorias.html',
+        {
+            'categorias': categorias,
+        },
+    )
 
 
 @rol_requerido(PerfilEmpleado.Rol.ADMINISTRADOR)
@@ -93,10 +109,14 @@ def crear_categoria(request):
             return redirect('lista_categorias')
     else:
         form = CategoriaForm()
-    return render(request, 'catalogo/formulario_categoria.html', {
-        'form': form,
-        'titulo': 'Nueva categoría',
-    })
+    return render(
+        request,
+        'catalogo/formulario_categoria.html',
+        {
+            'form': form,
+            'titulo': 'Nueva categoría',
+        },
+    )
 
 
 @rol_requerido(PerfilEmpleado.Rol.ADMINISTRADOR)
@@ -110,7 +130,11 @@ def editar_categoria(request, pk):
             return redirect('lista_categorias')
     else:
         form = CategoriaForm(instance=categoria)
-    return render(request, 'catalogo/formulario_categoria.html', {
-        'form': form,
-        'titulo': 'Editar categoría',
-    })
+    return render(
+        request,
+        'catalogo/formulario_categoria.html',
+        {
+            'form': form,
+            'titulo': 'Editar categoría',
+        },
+    )

@@ -1,8 +1,9 @@
 from datetime import timedelta
-from django.db.models import DateTimeField, ExpressionWrapper, F
-from django.utils import timezone
+
 from django.contrib import messages
+from django.db.models import DateTimeField, ExpressionWrapper, F
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 
 from pedidos.models import Pedido
 from personal.models import PerfilEmpleado
@@ -24,12 +25,18 @@ def lista_mesas(request):
         pedidos_activos.setdefault(pedido.mesa_id, pedido)
 
     reservas_activas = {}
-    for reserva in Reserva.objects.filter(
-        estado__in=Reserva.ESTADOS_ACTIVOS
-    ).annotate(fin_horario=ExpressionWrapper(
-        F('fecha_hora') + F('duracion_minutos') * timedelta(minutes=1),
-        output_field=DateTimeField(),
-    )).filter(fin_horario__gt=timezone.now()).select_related('cliente', 'mesa').order_by('fecha_hora'):
+    for reserva in (
+        Reserva.objects.filter(estado__in=Reserva.ESTADOS_ACTIVOS)
+        .annotate(
+            fin_horario=ExpressionWrapper(
+                F('fecha_hora') + F('duracion_minutos') * timedelta(minutes=1),
+                output_field=DateTimeField(),
+            )
+        )
+        .filter(fin_horario__gt=timezone.now())
+        .select_related('cliente', 'mesa')
+        .order_by('fecha_hora')
+    ):
         reservas_activas.setdefault(reserva.mesa_id, reserva)
 
     mesas_info = [
@@ -48,10 +55,14 @@ def lista_mesas(request):
         'reservadas': mesas.filter(activo=True, estado=Mesa.Estado.RESERVADA).count(),
     }
 
-    return render(request, 'mesas/lista.html', {
-        'mesas_info': mesas_info,
-        'resumen': resumen,
-    })
+    return render(
+        request,
+        'mesas/lista.html',
+        {
+            'mesas_info': mesas_info,
+            'resumen': resumen,
+        },
+    )
 
 
 @rol_requerido(PerfilEmpleado.Rol.ADMINISTRADOR)

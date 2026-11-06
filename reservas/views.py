@@ -1,12 +1,12 @@
-from core.paginacion import paginar
-from django.db import transaction
-from core.filtros import filtro_id, filtro_fecha
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from core.filtros import filtro_fecha
+from core.paginacion import paginar
 from personal.models import PerfilEmpleado
 from personal.permisos import rol_requerido
 
@@ -22,9 +22,7 @@ def lista_clientes(request):
     buscar = request.GET.get('buscar', '').strip()
     estado = request.GET.get('estado', '')
 
-    clientes = Cliente.objects.annotate(
-        cantidad_reservas=Count('reservas')
-    )
+    clientes = Cliente.objects.annotate(cantidad_reservas=Count('reservas'))
     if buscar:
         clientes = clientes.filter(
             Q(nombres__icontains=buscar)
@@ -37,11 +35,15 @@ def lista_clientes(request):
     elif estado == 'inactivos':
         clientes = clientes.filter(activo=False)
 
-    return render(request, 'reservas/lista_clientes.html', {
-        'clientes': paginar(request, clientes),
-        'buscar': buscar,
-        'estado': estado,
-    })
+    return render(
+        request,
+        'reservas/lista_clientes.html',
+        {
+            'clientes': paginar(request, clientes),
+            'buscar': buscar,
+            'estado': estado,
+        },
+    )
 
 
 @rol_requerido(*ROLES_RESERVAS_GESTIONAR)
@@ -54,10 +56,14 @@ def crear_cliente(request):
             return redirect('lista_clientes')
     else:
         form = ClienteForm()
-    return render(request, 'reservas/formulario_cliente.html', {
-        'form': form,
-        'titulo': 'Nuevo cliente',
-    })
+    return render(
+        request,
+        'reservas/formulario_cliente.html',
+        {
+            'form': form,
+            'titulo': 'Nuevo cliente',
+        },
+    )
 
 
 @rol_requerido(PerfilEmpleado.Rol.ADMINISTRADOR)
@@ -71,10 +77,14 @@ def editar_cliente(request, pk):
             return redirect('lista_clientes')
     else:
         form = ClienteForm(instance=cliente)
-    return render(request, 'reservas/formulario_cliente.html', {
-        'form': form,
-        'titulo': 'Editar cliente',
-    })
+    return render(
+        request,
+        'reservas/formulario_cliente.html',
+        {
+            'form': form,
+            'titulo': 'Editar cliente',
+        },
+    )
 
 
 @rol_requerido(*ROLES_RESERVAS_VER)
@@ -96,13 +106,17 @@ def lista_reservas(request):
             | Q(mesa__numero__icontains=buscar)
         )
 
-    return render(request, 'reservas/lista_reservas.html', {
-        'reservas': paginar(request, reservas),
-        'estado': estado,
-        'fecha': fecha,
-        'buscar': buscar,
-        'estados': Reserva.Estado.choices,
-    })
+    return render(
+        request,
+        'reservas/lista_reservas.html',
+        {
+            'reservas': paginar(request, reservas),
+            'estado': estado,
+            'fecha': fecha,
+            'buscar': buscar,
+            'estados': Reserva.Estado.choices,
+        },
+    )
 
 
 @rol_requerido(*ROLES_RESERVAS_GESTIONAR)
@@ -121,10 +135,14 @@ def crear_reserva(request):
                 return redirect('detalle_reserva', pk=reserva.pk)
     else:
         form = ReservaForm()
-    return render(request, 'reservas/formulario_reserva.html', {
-        'form': form,
-        'titulo': 'Nueva reserva',
-    })
+    return render(
+        request,
+        'reservas/formulario_reserva.html',
+        {
+            'form': form,
+            'titulo': 'Nueva reserva',
+        },
+    )
 
 
 @rol_requerido(*ROLES_RESERVAS_GESTIONAR)
@@ -149,10 +167,14 @@ def editar_reserva(request, pk):
                 return redirect('detalle_reserva', pk=reserva.pk)
     else:
         form = ReservaForm(instance=reserva)
-    return render(request, 'reservas/formulario_reserva.html', {
-        'form': form,
-        'titulo': 'Editar reserva',
-    })
+    return render(
+        request,
+        'reservas/formulario_reserva.html',
+        {
+            'form': form,
+            'titulo': 'Editar reserva',
+        },
+    )
 
 
 @rol_requerido(*ROLES_RESERVAS_VER)
@@ -161,10 +183,14 @@ def detalle_reserva(request, pk):
         Reserva.objects.select_related('cliente', 'mesa', 'usuario'),
         pk=pk,
     )
-    return render(request, 'reservas/detalle_reserva.html', {
-        'reserva': reserva,
-        'estados_siguientes': Reserva.TRANSICIONES.get(reserva.estado, []),
-    })
+    return render(
+        request,
+        'reservas/detalle_reserva.html',
+        {
+            'reserva': reserva,
+            'estados_siguientes': Reserva.TRANSICIONES.get(reserva.estado, []),
+        },
+    )
 
 
 @transaction.atomic

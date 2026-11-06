@@ -16,9 +16,7 @@ def iniciar_preparacion_con_descuento(pedido_id, usuario):
                 'Solo se puede iniciar la preparación de un pedido abierto.'
             )
 
-        detalles = list(
-            pedido.detalles.select_related('producto').order_by('id')
-        )
+        detalles = list(pedido.detalles.select_related('producto').order_by('id'))
         if not detalles:
             raise ValidationError('El pedido no tiene productos.')
 
@@ -28,9 +26,7 @@ def iniciar_preparacion_con_descuento(pedido_id, usuario):
         ).select_related('ingrediente', 'producto')
         recetas_por_producto = {}
         for receta in recetas:
-            recetas_por_producto.setdefault(
-                receta.producto_id, []
-            ).append(receta)
+            recetas_por_producto.setdefault(receta.producto_id, []).append(receta)
 
         for detalle in detalles:
             if detalle.producto_id not in recetas_por_producto:
@@ -45,27 +41,22 @@ def iniciar_preparacion_con_descuento(pedido_id, usuario):
             for receta in recetas_por_producto[detalle.producto_id]:
                 cantidad = Decimal(detalle.cantidad) * receta.cantidad
                 cantidades_necesarias[receta.ingrediente_id] = (
-                    cantidades_necesarias.get(
-                        receta.ingrediente_id, Decimal('0')
-                    ) + cantidad
+                    cantidades_necesarias.get(receta.ingrediente_id, Decimal('0'))
+                    + cantidad
                 )
                 ingrediente_ids.add(receta.ingrediente_id)
 
         ingredientes = list(
-            Ingrediente.objects.filter(
-                pk__in=ingrediente_ids
-            ).select_for_update().select_related('unidad_medida')
+            Ingrediente.objects.filter(pk__in=ingrediente_ids)
+            .select_for_update()
+            .select_related('unidad_medida')
         )
 
         ingredientes_inactivos = [
-            ingrediente
-            for ingrediente in ingredientes
-            if not ingrediente.activo
+            ingrediente for ingrediente in ingredientes if not ingrediente.activo
         ]
         if ingredientes_inactivos:
-            nombres = ', '.join(
-                sorted(i.nombre for i in ingredientes_inactivos)
-            )
+            nombres = ', '.join(sorted(i.nombre for i in ingredientes_inactivos))
             raise ValidationError(
                 f'Los siguientes ingredientes están inactivos: {nombres}.'
             )
@@ -87,9 +78,7 @@ def iniciar_preparacion_con_descuento(pedido_id, usuario):
             )
 
         if MovimientoInventario.objects.filter(pedido=pedido).exists():
-            raise ValidationError(
-                'Este pedido ya ha descontado ingredientes.'
-            )
+            raise ValidationError('Este pedido ya ha descontado ingredientes.')
 
         for ingrediente in ingredientes:
             movimiento = MovimientoInventario(

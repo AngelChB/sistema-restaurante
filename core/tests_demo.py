@@ -1,11 +1,13 @@
+from io import StringIO
+from unittest.mock import patch
+
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
-from unittest.mock import patch
-from io import StringIO
-from pedidos.models import Pedido
+
 from caja.models import Pago
 from inventario.models import MovimientoInventario
+from pedidos.models import Pedido
 
 
 class CargarDemoTests(TestCase):

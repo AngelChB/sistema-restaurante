@@ -1,23 +1,33 @@
 from decimal import Decimal
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+
+from caja.models import Pago
 from catalogo.models import Categoria, Producto
 from mesas.models import Mesa
-from pedidos.models import Pedido, DetallePedido
-from caja.models import Pago
+from pedidos.models import DetallePedido, Pedido
 from reservas.models import Cliente
 
 
 class PaginacionTests(TestCase):
     def setUp(self):
-        self.user = get_user_model().objects.create_superuser(username='paginas', password='Clave123!')
+        self.user = get_user_model().objects.create_superuser(
+            username='paginas', password='Clave123!'
+        )
         self.client.force_login(self.user)
 
     def test_clientes_se_dividen_en_paginas_y_conservan_busqueda(self):
-        Cliente.objects.bulk_create([Cliente(nombres='Cliente ' + str(i), telefono='999') for i in range(31)])
-        r1 = self.client.get(reverse('lista_clientes'), {'buscar': 'Cliente', 'pagina': 1})
-        r2 = self.client.get(reverse('lista_clientes'), {'buscar': 'Cliente', 'pagina': 2})
+        Cliente.objects.bulk_create(
+            [Cliente(nombres='Cliente ' + str(i), telefono='999') for i in range(31)]
+        )
+        r1 = self.client.get(
+            reverse('lista_clientes'), {'buscar': 'Cliente', 'pagina': 1}
+        )
+        r2 = self.client.get(
+            reverse('lista_clientes'), {'buscar': 'Cliente', 'pagina': 2}
+        )
         p1, p2 = r1.context['clientes'], r2.context['clientes']
         self.assertEqual(len(p1), 25)
         self.assertEqual(len(p2), 6)
@@ -33,9 +43,13 @@ class PaginacionTests(TestCase):
                 self.assertEqual(response.context['clientes'].number, 1)
 
     def test_listados_vacios_tienen_pagina_valida(self):
-        for ruta, nombre in [('lista_pedidos', 'pedidos'), ('lista_compras', 'compras'),
-                             ('historial_movimientos', 'movimientos'), ('lista_reservas', 'reservas'),
-                             ('lista_empleados', 'usuarios')]:
+        for ruta, nombre in [
+            ('lista_pedidos', 'pedidos'),
+            ('lista_compras', 'compras'),
+            ('historial_movimientos', 'movimientos'),
+            ('lista_reservas', 'reservas'),
+            ('lista_empleados', 'usuarios'),
+        ]:
             with self.subTest(ruta=ruta):
                 response = self.client.get(reverse(ruta))
                 self.assertEqual(response.status_code, 200)
@@ -43,15 +57,27 @@ class PaginacionTests(TestCase):
 
     def test_paginar_caja_no_reduce_totales(self):
         categoria = Categoria.objects.create(nombre='Menú')
-        producto = Producto.objects.create(categoria=categoria, nombre='Plato', precio=10)
+        producto = Producto.objects.create(
+            categoria=categoria, nombre='Plato', precio=10
+        )
         mesa = Mesa.objects.create(numero=1, capacidad=4)
         for _ in range(26):
-            pedido = Pedido.objects.create(mesa=mesa, mesero=self.user, estado='ABIERTO')
+            pedido = Pedido.objects.create(
+                mesa=mesa, mesero=self.user, estado='ABIERTO'
+            )
             DetallePedido.objects.create(pedido=pedido, producto=producto, cantidad=1)
             pedido.estado = Pedido.Estado.ENTREGADO
             pedido.save()
-            Pago.objects.create(pedido=pedido, cajero=self.user, metodo='EFECTIVO', monto=10, monto_recibido=10)
-        response = self.client.get(reverse('panel_caja'), {'pagina_pagos': 2, 'pagina_pendientes': 1})
+            Pago.objects.create(
+                pedido=pedido,
+                cajero=self.user,
+                metodo='EFECTIVO',
+                monto=10,
+                monto_recibido=10,
+            )
+        response = self.client.get(
+            reverse('panel_caja'), {'pagina_pagos': 2, 'pagina_pendientes': 1}
+        )
         self.assertEqual(len(response.context['pagos']), 1)
         self.assertEqual(response.context['cantidad_pagos'], 26)
         self.assertEqual(response.context['total_dia'], Decimal('260'))
@@ -59,6 +85,7 @@ class PaginacionTests(TestCase):
 
     def test_paginacion_no_expone_pedidos_ajenos(self):
         from personal.models import PerfilEmpleado
+
         otro = get_user_model().objects.create_user(username='mesero')
         PerfilEmpleado.objects.create(usuario=otro, rol='MESERO')
         mesa = Mesa.objects.create(numero=1, capacidad=4)

@@ -1,0 +1,13 @@
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+extend-exclude = ["migrations", "venv"]
+
+[tool.ruff.lint]
+select = ["I", "F401", "F811"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["caja", "catalogo", "cocina", "compras", "config", "core", "inventario", "mesas", "pedidos", "personal", "reportes", "reservas", "sala"]
+
+[tool.ruff.format]
+quote-style = "single"

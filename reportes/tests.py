@@ -24,9 +24,7 @@ def crear_usuario(username, rol=None):
 
 class ReporteVentasTests(TestCase):
     def setUp(self):
-        self.administrador = crear_usuario(
-            'admin1', PerfilEmpleado.Rol.ADMINISTRADOR
-        )
+        self.administrador = crear_usuario('admin1', PerfilEmpleado.Rol.ADMINISTRADOR)
         self.cajero = crear_usuario('cajero1', PerfilEmpleado.Rol.CAJERO)
         self.mesero = crear_usuario('mesero1', PerfilEmpleado.Rol.MESERO)
         self.cocinero = crear_usuario('cocinero1', PerfilEmpleado.Rol.COCINA)
@@ -98,7 +96,7 @@ class ReporteVentasTests(TestCase):
         response = self.client.get(reverse('reporte_ventas'))
         self.assertRedirects(
             response,
-            f"{reverse('login')}?next={reverse('reporte_ventas')}",
+            f'{reverse("login")}?next={reverse("reporte_ventas")}',
         )
 
     def test_usuario_sin_perfil_recibe_403(self):
@@ -140,9 +138,7 @@ class ReporteVentasTests(TestCase):
 
     def test_el_filtro_por_rango_de_fechas_funciona(self):
         pago_hoy = self._crear_pago(fecha=timezone.now())
-        pago_viejo = self._crear_pago(
-            fecha=timezone.now() - timedelta(days=10)
-        )
+        pago_viejo = self._crear_pago(fecha=timezone.now() - timedelta(days=10))
         hoy = timezone.localdate()
         self._login(self.cajero)
         response = self.client.get(
@@ -163,9 +159,7 @@ class ReporteVentasTests(TestCase):
         pago2 = self._crear_pago(cantidad=2)
         self._login(self.cajero)
         response = self.client.get(reverse('reporte_ventas'))
-        self.assertEqual(
-            response.context['total_vendido'], pago1.monto + pago2.monto
-        )
+        self.assertEqual(response.context['total_vendido'], pago1.monto + pago2.monto)
         self.assertEqual(response.context['cantidad_pagos'], 2)
 
     def test_los_totales_por_metodo_de_pago_se_calcularon_correctamente(self):
@@ -196,9 +190,7 @@ class ReporteVentasTests(TestCase):
         self._crear_pago(cantidad=2)
         self._login(self.cajero)
         response = self.client.get(reverse('reporte_ventas'))
-        self.assertEqual(
-            response.context['ticket_promedio'], Decimal('18.75')
-        )
+        self.assertEqual(response.context['ticket_promedio'], Decimal('18.75'))
 
     def test_los_productos_mas_vendidos_se_calcularon_correctamente(self):
         self._crear_pago(producto=self.producto1, cantidad=2)
@@ -207,9 +199,7 @@ class ReporteVentasTests(TestCase):
         self._login(self.cajero)
         response = self.client.get(reverse('reporte_ventas'))
         productos = response.context['productos_mas_vendidos']
-        por_producto = {
-            fila['producto__nombre']: fila for fila in productos
-        }
+        por_producto = {fila['producto__nombre']: fila for fila in productos}
         cafe = por_producto['Café']
         self.assertEqual(cafe['cantidad_total'], 3)
         self.assertEqual(cafe['ingreso'], Decimal('37.50'))
@@ -238,9 +228,7 @@ class ReporteVentasTests(TestCase):
         self.assertEqual(len(ventas), 2)
         totales = {str(venta['fecha']): venta['total'] for venta in ventas}
         self.assertEqual(totales[str(hoy)], Decimal('12.50'))
-        self.assertEqual(
-            totales[str(hoy - timedelta(days=1))], Decimal('16.00')
-        )
+        self.assertEqual(totales[str(hoy - timedelta(days=1))], Decimal('16.00'))
 
     def test_una_fecha_inicial_posterior_a_la_final_muestra_un_mensaje_de_error(self):
         hoy = timezone.localdate()

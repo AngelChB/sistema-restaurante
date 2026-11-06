@@ -18,9 +18,7 @@ from reservas.models import Cliente, Reserva
 
 
 def _crear_usuario(username, rol):
-    user = get_user_model().objects.create_user(
-        username=username, password='test12345'
-    )
+    user = get_user_model().objects.create_user(username=username, password='test12345')
     PerfilEmpleado.objects.create(usuario=user, rol=rol)
     return user
 
@@ -29,9 +27,7 @@ class DashboardTests(TestCase):
     def setUp(self):
         self.mesero = _crear_usuario('mesero1', PerfilEmpleado.Rol.MESERO)
         self.user = self.mesero
-        self.administrador = _crear_usuario(
-            'admin1', PerfilEmpleado.Rol.ADMINISTRADOR
-        )
+        self.administrador = _crear_usuario('admin1', PerfilEmpleado.Rol.ADMINISTRADOR)
         self.cocina = _crear_usuario('cocina1', PerfilEmpleado.Rol.COCINA)
         self.cajero = _crear_usuario('cajero1', PerfilEmpleado.Rol.CAJERO)
 
@@ -39,7 +35,7 @@ class DashboardTests(TestCase):
         response = self.client.get(reverse('dashboard'))
         self.assertRedirects(
             response,
-            f"{reverse('login')}?next={reverse('dashboard')}",
+            f'{reverse("login")}?next={reverse("dashboard")}',
         )
 
     def test_usuario_autenticado_puede_abrir_el_dashboard(self):
@@ -147,9 +143,7 @@ class DashboardTests(TestCase):
         fecha_controlada = timezone.localdate() + timedelta(days=10)
 
         def _fecha_local_en(dia):
-            return timezone.make_aware(
-                datetime.combine(dia, time(12, 0)), tz
-            )
+            return timezone.make_aware(datetime.combine(dia, time(12, 0)), tz)
 
         Reserva.objects.create(
             cliente=cliente,
@@ -166,17 +160,13 @@ class DashboardTests(TestCase):
             cantidad_personas=2,
         )
         self.client.login(username='admin1', password='test12345')
-        with mock.patch(
-            'core.views.timezone.localdate', return_value=fecha_controlada
-        ):
+        with mock.patch('core.views.timezone.localdate', return_value=fecha_controlada):
             response = self.client.get(reverse('dashboard'))
         self.assertEqual(response.context['cantidad_reservas_hoy'], 1)
         self.assertEqual(response.context['cantidad_pendientes'], 1)
 
     def test_bajo_stock_se_contabiliza_correctamente(self):
-        unidad = UnidadMedida.objects.create(
-            nombre='Kilogramo', abreviatura='kg'
-        )
+        unidad = UnidadMedida.objects.create(nombre='Kilogramo', abreviatura='kg')
         Ingrediente.objects.create(
             nombre='Harina',
             unidad_medida=unidad,

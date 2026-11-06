@@ -42,11 +42,7 @@ class Cliente(models.Model):
                 clientes = clientes.exclude(pk=self.pk)
             if clientes.exists():
                 raise ValidationError(
-                    {
-                        'documento': (
-                            'Ya existe un cliente con ese documento.'
-                        )
-                    }
+                    {'documento': ('Ya existe un cliente con ese documento.')}
                 )
 
     def save(self, *args, **kwargs):
@@ -109,10 +105,7 @@ class Reserva(models.Model):
         verbose_name_plural = 'Reservas'
 
     def __str__(self):
-        return (
-            f'Reserva {self.pk} - {self.cliente} - '
-            f'Mesa {self.mesa.numero}'
-        )
+        return f'Reserva {self.pk} - {self.cliente} - Mesa {self.mesa.numero}'
 
     @property
     def fin(self):
@@ -132,9 +125,7 @@ class Reserva(models.Model):
                 'La cantidad de personas debe ser mayor que cero.'
             )
         if self.duracion_minutos is not None and self.duracion_minutos <= 0:
-            errores['duracion_minutos'] = (
-                'La duración debe ser mayor que cero minutos.'
-            )
+            errores['duracion_minutos'] = 'La duración debe ser mayor que cero minutos.'
         if self.fecha_hora is not None:
             from django.utils import timezone
 
@@ -145,13 +136,9 @@ class Reserva(models.Model):
                     )
             if self.mesa_id and self.estado in self.ESTADOS_ACTIVOS:
                 if not self.mesa.activo:
-                    errores['mesa'] = (
-                        'No se puede reservar una mesa inactiva.'
-                    )
+                    errores['mesa'] = 'No se puede reservar una mesa inactiva.'
                 if self.mesa.estado == Mesa.Estado.FUERA_SERVICIO:
-                    errores['mesa'] = (
-                        'No se puede reservar una mesa fuera de servicio.'
-                    )
+                    errores['mesa'] = 'No se puede reservar una mesa fuera de servicio.'
                 if self.mesa.capacidad is not None and (
                     self.cantidad_personas is not None
                     and self.cantidad_personas > self.mesa.capacidad
@@ -180,10 +167,7 @@ class Reserva(models.Model):
         for reserva in reservas:
             inicio_existente = reserva.fecha_hora
             fin_existente = reserva.fin
-            if (
-                inicio_existente < fin
-                and self.fecha_hora < fin_existente
-            ):
+            if inicio_existente < fin and self.fecha_hora < fin_existente:
                 return True
         return False
 
@@ -194,9 +178,12 @@ class Reserva(models.Model):
                 anterior = Reserva.objects.select_for_update().get(pk=self.pk)
                 mesas_ids.add(anterior.mesa_id)
             # Una fila de mesa existe incluso cuando todavía no hay reservas.
-            mesas = {m.pk: m for m in Mesa.objects.select_for_update().filter(
-                pk__in=mesas_ids
-            ).order_by('pk')}
+            mesas = {
+                m.pk: m
+                for m in Mesa.objects.select_for_update()
+                .filter(pk__in=mesas_ids)
+                .order_by('pk')
+            }
             self.mesa = mesas[self.mesa_id]
             self.validate()
             super().save(*args, **kwargs)

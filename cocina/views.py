@@ -1,6 +1,6 @@
-from django.db import transaction
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -21,22 +21,26 @@ def panel_cocina(request):
     pedidos = Pedido.objects.select_related('mesa', 'mesero').prefetch_related(
         'detalles__producto'
     )
-    pedidos_abiertos = pedidos.filter(
-        estado=Pedido.Estado.ABIERTO
-    ).order_by('fecha_creacion')
+    pedidos_abiertos = pedidos.filter(estado=Pedido.Estado.ABIERTO).order_by(
+        'fecha_creacion'
+    )
     pedidos_en_preparacion = pedidos.filter(
         estado=Pedido.Estado.EN_PREPARACION
     ).order_by('fecha_creacion')
-    pedidos_listos = pedidos.filter(
-        estado=Pedido.Estado.LISTO
-    ).order_by('fecha_creacion')
+    pedidos_listos = pedidos.filter(estado=Pedido.Estado.LISTO).order_by(
+        'fecha_creacion'
+    )
 
-    return render(request, 'cocina/panel.html', {
-        'pedidos_abiertos': pedidos_abiertos,
-        'pedidos_en_preparacion': pedidos_en_preparacion,
-        'pedidos_listos': pedidos_listos,
-        'hora_actual': timezone.now(),
-    })
+    return render(
+        request,
+        'cocina/panel.html',
+        {
+            'pedidos_abiertos': pedidos_abiertos,
+            'pedidos_en_preparacion': pedidos_en_preparacion,
+            'pedidos_listos': pedidos_listos,
+            'hora_actual': timezone.now(),
+        },
+    )
 
 
 @rol_requerido(PerfilEmpleado.Rol.ADMINISTRADOR, PerfilEmpleado.Rol.COCINA)
@@ -78,7 +82,5 @@ def actualizar_estado_cocina(request, pk):
             )
             messages.error(request, mensaje)
         else:
-            messages.success(
-                request, 'Estado del pedido actualizado correctamente.'
-            )
+            messages.success(request, 'Estado del pedido actualizado correctamente.')
     return redirect('panel_cocina')

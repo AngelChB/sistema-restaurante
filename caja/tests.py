@@ -1,5 +1,5 @@
-from decimal import Decimal
 from datetime import timedelta
+from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -21,9 +21,7 @@ class PagoModelTests(TestCase):
         self.cajero = User.objects.create_user(
             username='cajero1', password='test12345', is_staff=True
         )
-        self.mesero = User.objects.create_user(
-            username='mesero1', password='test12345'
-        )
+        self.mesero = User.objects.create_user(username='mesero1', password='test12345')
         self.categoria = Categoria.objects.create(nombre='Bebidas')
         self.producto = Producto.objects.create(
             categoria=self.categoria,
@@ -169,9 +167,7 @@ class CajaViewsTests(TestCase):
         PerfilEmpleado.objects.create(
             usuario=self.cajero, rol=PerfilEmpleado.Rol.CAJERO
         )
-        self.mesero = User.objects.create_user(
-            username='mesero1', password='test12345'
-        )
+        self.mesero = User.objects.create_user(username='mesero1', password='test12345')
         self.mesa = Mesa.objects.create(numero=1, capacidad=4)
         self.categoria = Categoria.objects.create(nombre='Bebidas')
         self.producto = Producto.objects.create(
@@ -208,7 +204,7 @@ class CajaViewsTests(TestCase):
         response = self.client.get(reverse('panel_caja'))
         self.assertRedirects(
             response,
-            f"{reverse('login')}?next={reverse('panel_caja')}",
+            f'{reverse("login")}?next={reverse("panel_caja")}',
         )
 
     def test_usuario_no_staff_no_puede_ver_el_panel(self):
@@ -310,9 +306,7 @@ class CajaViewsTests(TestCase):
             reverse('registrar_pago', args=[pedido.pk]),
             {'metodo': Pago.Metodo.TARJETA},
         )
-        self.assertRedirects(
-            response, reverse('detalle_pago', args=[pedido.pago.pk])
-        )
+        self.assertRedirects(response, reverse('detalle_pago', args=[pedido.pago.pk]))
         self.assertEqual(Pago.objects.count(), 1)
 
     def test_no_se_puede_pagar_en_efectivo_sin_monto_recibido(self):
@@ -375,15 +369,11 @@ class CierreCajaTests(TestCase):
         self.superusuario = User.objects.create_user(
             username='super1', password='test12345', is_superuser=True
         )
-        self.mesero = User.objects.create_user(
-            username='mesero1', password='test12345'
-        )
+        self.mesero = User.objects.create_user(username='mesero1', password='test12345')
         PerfilEmpleado.objects.create(
             usuario=self.mesero, rol=PerfilEmpleado.Rol.MESERO
         )
-        self.cocina = User.objects.create_user(
-            username='cocina1', password='test12345'
-        )
+        self.cocina = User.objects.create_user(username='cocina1', password='test12345')
         PerfilEmpleado.objects.create(
             usuario=self.cocina, rol=PerfilEmpleado.Rol.COCINA
         )
@@ -431,9 +421,7 @@ class CierreCajaTests(TestCase):
     def test_el_cierre_calcula_los_totales_por_metodo(self):
         self._crear_pago(self._pedido_entregado(), metodo=Pago.Metodo.EFECTIVO)
         self._crear_pago(self._pedido_entregado(), metodo=Pago.Metodo.TARJETA)
-        self._crear_pago(
-            self._pedido_entregado(cantidad=2), metodo=Pago.Metodo.YAPE
-        )
+        self._crear_pago(self._pedido_entregado(cantidad=2), metodo=Pago.Metodo.YAPE)
         self._crear_pago(self._pedido_entregado(), metodo=Pago.Metodo.PLIN)
         cierre = self._crear_cierre()
         self.assertEqual(cierre.efectivo_ventas, Decimal('12.50'))

@@ -1,5 +1,3 @@
-from core.paginacion import paginar
-from core.filtros import filtro_id, filtro_fecha
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -7,6 +5,8 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from core.filtros import filtro_id
+from core.paginacion import paginar
 from personal.models import PerfilEmpleado
 from personal.permisos import rol_requerido
 
@@ -36,11 +36,15 @@ def lista_proveedores(request):
     elif estado == 'inactivos':
         proveedores = proveedores.filter(activo=False)
 
-    return render(request, 'compras/lista_proveedores.html', {
-        'proveedores': proveedores,
-        'buscar': buscar,
-        'estado': estado,
-    })
+    return render(
+        request,
+        'compras/lista_proveedores.html',
+        {
+            'proveedores': proveedores,
+            'buscar': buscar,
+            'estado': estado,
+        },
+    )
 
 
 @rol_requerido(*ROLES_COMPRAS_GESTIONAR)
@@ -53,10 +57,14 @@ def crear_proveedor(request):
             return redirect('lista_proveedores')
     else:
         form = ProveedorForm()
-    return render(request, 'compras/formulario_proveedor.html', {
-        'form': form,
-        'titulo': 'Nuevo proveedor',
-    })
+    return render(
+        request,
+        'compras/formulario_proveedor.html',
+        {
+            'form': form,
+            'titulo': 'Nuevo proveedor',
+        },
+    )
 
 
 @rol_requerido(*ROLES_COMPRAS_GESTIONAR)
@@ -70,10 +78,14 @@ def editar_proveedor(request, pk):
             return redirect('lista_proveedores')
     else:
         form = ProveedorForm(instance=proveedor)
-    return render(request, 'compras/formulario_proveedor.html', {
-        'form': form,
-        'titulo': 'Editar proveedor',
-    })
+    return render(
+        request,
+        'compras/formulario_proveedor.html',
+        {
+            'form': form,
+            'titulo': 'Editar proveedor',
+        },
+    )
 
 
 @rol_requerido(*ROLES_COMPRAS_VER)
@@ -98,14 +110,18 @@ def lista_compras(request):
     compras = compras.order_by('-fecha_creacion', '-id')
     proveedores = Proveedor.objects.filter(activo=True).order_by('razon_social')
 
-    return render(request, 'compras/lista_compras.html', {
-        'compras': paginar(request, compras),
-        'proveedores': proveedores,
-        'estado': estado,
-        'proveedor_id': proveedor_id,
-        'buscar': buscar,
-        'estados': Compra.Estado.choices,
-    })
+    return render(
+        request,
+        'compras/lista_compras.html',
+        {
+            'compras': paginar(request, compras),
+            'proveedores': proveedores,
+            'estado': estado,
+            'proveedor_id': proveedor_id,
+            'buscar': buscar,
+            'estados': Compra.Estado.choices,
+        },
+    )
 
 
 @rol_requerido(*ROLES_COMPRAS_GESTIONAR)
@@ -132,11 +148,15 @@ def crear_compra(request):
         form = CompraForm()
         formset = DetalleCompraFormSet(instance=Compra(), prefix='detalles')
 
-    return render(request, 'compras/formulario_compra.html', {
-        'form': form,
-        'formset': formset,
-        'titulo': 'Nueva compra',
-    })
+    return render(
+        request,
+        'compras/formulario_compra.html',
+        {
+            'form': form,
+            'formset': formset,
+            'titulo': 'Nueva compra',
+        },
+    )
 
 
 @rol_requerido(*ROLES_COMPRAS_GESTIONAR)
@@ -154,9 +174,7 @@ def editar_compra(request, pk):
 
     if request.method == 'POST':
         form = CompraForm(request.POST, instance=compra)
-        formset = DetalleCompraFormSet(
-            request.POST, instance=compra, prefix='detalles'
-        )
+        formset = DetalleCompraFormSet(request.POST, instance=compra, prefix='detalles')
         if form.is_valid() and formset.is_valid():
             try:
                 with transaction.atomic():
@@ -172,11 +190,15 @@ def editar_compra(request, pk):
         form = CompraForm(instance=compra)
         formset = DetalleCompraFormSet(instance=compra, prefix='detalles')
 
-    return render(request, 'compras/formulario_compra.html', {
-        'form': form,
-        'formset': formset,
-        'titulo': 'Editar compra',
-    })
+    return render(
+        request,
+        'compras/formulario_compra.html',
+        {
+            'form': form,
+            'formset': formset,
+            'titulo': 'Editar compra',
+        },
+    )
 
 
 @rol_requerido(*ROLES_COMPRAS_VER)
@@ -187,9 +209,13 @@ def detalle_compra(request, pk):
         ),
         pk=pk,
     )
-    return render(request, 'compras/detalle_compra.html', {
-        'compra': compra,
-    })
+    return render(
+        request,
+        'compras/detalle_compra.html',
+        {
+            'compra': compra,
+        },
+    )
 
 
 @rol_requerido(*ROLES_COMPRAS_GESTIONAR)
@@ -199,9 +225,7 @@ def recibir_compra_view(request, pk):
         recibir_compra(pk, request.user)
     except ValidationError as error:
         mensaje = (
-            error.messages[0]
-            if error.messages
-            else 'No se pudo recibir la compra.'
+            error.messages[0] if error.messages else 'No se pudo recibir la compra.'
         )
         messages.error(request, mensaje)
     else:
@@ -224,9 +248,7 @@ def cancelar_compra(request, pk):
         compra.save()
     except ValidationError as error:
         mensaje = (
-            error.messages[0]
-            if error.messages
-            else 'No se pudo cancelar la compra.'
+            error.messages[0] if error.messages else 'No se pudo cancelar la compra.'
         )
         messages.error(request, mensaje)
     else:

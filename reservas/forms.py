@@ -57,17 +57,13 @@ class ClienteForm(forms.ModelForm):
         if self.instance.pk:
             clientes = clientes.exclude(pk=self.instance.pk)
         if clientes.exists():
-            raise forms.ValidationError(
-                'Ya existe un cliente con ese documento.'
-            )
+            raise forms.ValidationError('Ya existe un cliente con ese documento.')
         return documento
 
     def clean_telefono(self):
         telefono = self.cleaned_data.get('telefono')
         if not telefono:
-            raise forms.ValidationError(
-                'El teléfono no puede estar vacío.'
-            )
+            raise forms.ValidationError('El teléfono no puede estar vacío.')
         return telefono.strip()
 
 

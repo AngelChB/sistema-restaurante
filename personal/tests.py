@@ -49,7 +49,7 @@ class PersonalViewsTests(TestCase):
         response = self.client.get(reverse('lista_empleados'))
         self.assertRedirects(
             response,
-            f"{reverse('login')}?next={reverse('lista_empleados')}",
+            f'{reverse("login")}?next={reverse("lista_empleados")}',
         )
 
     def test_usuario_normal_recibe_403(self):
@@ -65,9 +65,7 @@ class PersonalViewsTests(TestCase):
 
     def test_usuario_staff_puede_crear_un_empleado(self):
         self.client.login(username='admin1', password='Clave12345')
-        response = self.client.post(
-            reverse('crear_empleado'), self._datos_crear()
-        )
+        response = self.client.post(reverse('crear_empleado'), self._datos_crear())
         self.assertRedirects(response, reverse('lista_empleados'))
         self.assertTrue(User.objects.filter(username='nuevo').exists())
 
@@ -167,20 +165,14 @@ class PersonalViewsTests(TestCase):
 
     def test_la_busqueda_por_username_funciona(self):
         self.client.login(username='admin1', password='Clave12345')
-        response = self.client.get(
-            reverse('lista_empleados'), {'buscar': 'juan'}
-        )
+        response = self.client.get(reverse('lista_empleados'), {'buscar': 'juan'})
         self.assertContains(response, 'juan')
         self.assertNotContains(response, 'mesero1')
 
     def test_el_filtro_por_rol_funciona(self):
         self.client.login(username='admin1', password='Clave12345')
-        cajero = User.objects.create_user(
-            username='carlos', password='Clave12345'
-        )
-        PerfilEmpleado.objects.create(
-            usuario=cajero, rol=PerfilEmpleado.Rol.CAJERO
-        )
+        cajero = User.objects.create_user(username='carlos', password='Clave12345')
+        PerfilEmpleado.objects.create(usuario=cajero, rol=PerfilEmpleado.Rol.CAJERO)
         response = self.client.get(
             reverse('lista_empleados'), {'rol': PerfilEmpleado.Rol.CAJERO}
         )
@@ -205,9 +197,7 @@ class CambiarPasswordTests(TestCase):
         PerfilEmpleado.objects.create(
             usuario=self.mesero, rol=PerfilEmpleado.Rol.MESERO
         )
-        self.url = reverse(
-            'cambiar_password_empleado', args=[self.mesero.pk]
-        )
+        self.url = reverse('cambiar_password_empleado', args=[self.mesero.pk])
 
     def _login_admin(self):
         self.client.login(username='admin2', password='ClaveAdmin123')
@@ -281,7 +271,7 @@ class CambiarPasswordTests(TestCase):
 
     def test_visitante_no_autenticado_es_redirigido_al_login(self):
         response = self.client.get(self.url)
-        self.assertRedirects(response, f"{reverse('login')}?next={self.url}")
+        self.assertRedirects(response, f'{reverse("login")}?next={self.url}')
 
     def test_no_se_expone_la_contrasena_en_las_respuestas_html(self):
         self._login_admin()
@@ -299,7 +289,9 @@ class CambiarPasswordTests(TestCase):
         self._login_admin()
         response = self.client.get(reverse('lista_empleados'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, reverse('cambiar_password_empleado', args=[self.mesero.pk]))
+        self.assertContains(
+            response, reverse('cambiar_password_empleado', args=[self.mesero.pk])
+        )
 
 
 class GestionTrabajadorTests(TestCase):
@@ -325,12 +317,8 @@ class GestionTrabajadorTests(TestCase):
             mesero=self.mesero,
             estado=Pedido.Estado.ABIERTO,
         )
-        self.url_usuario = reverse(
-            'cambiar_usuario_empleado', args=[self.mesero.pk]
-        )
-        self.url_estado = reverse(
-            'alternar_estado_empleado', args=[self.mesero.pk]
-        )
+        self.url_usuario = reverse('cambiar_usuario_empleado', args=[self.mesero.pk])
+        self.url_estado = reverse('alternar_estado_empleado', args=[self.mesero.pk])
 
     def _login_admin(self):
         self.client.login(username='admin3', password='ClaveAdmin123')
@@ -344,24 +332,16 @@ class GestionTrabajadorTests(TestCase):
 
     def test_el_username_se_actualiza_correctamente(self):
         self._login_admin()
-        response = self.client.post(
-            self.url_usuario, {'username': 'nuevo_carlos'}
-        )
+        response = self.client.post(self.url_usuario, {'username': 'nuevo_carlos'})
         self.assertRedirects(response, reverse('lista_empleados'))
         self.mesero.refresh_from_db()
         self.assertEqual(self.mesero.username, 'nuevo_carlos')
 
     def test_no_se_permite_username_duplicado(self):
-        otro = User.objects.create_user(
-            username='juan2026', password='ClaveVieja123'
-        )
-        PerfilEmpleado.objects.create(
-            usuario=otro, rol=PerfilEmpleado.Rol.MESERO
-        )
+        otro = User.objects.create_user(username='juan2026', password='ClaveVieja123')
+        PerfilEmpleado.objects.create(usuario=otro, rol=PerfilEmpleado.Rol.MESERO)
         self._login_admin()
-        response = self.client.post(
-            self.url_usuario, {'username': 'juan2026'}
-        )
+        response = self.client.post(self.url_usuario, {'username': 'juan2026'})
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context['form'].errors)
         self.mesero.refresh_from_db()
@@ -380,9 +360,7 @@ class GestionTrabajadorTests(TestCase):
         self.client.post(self.url_usuario, {'username': 'carlos_nuevo'})
         self.client.logout()
         self.assertTrue(
-            self.client.login(
-                username='carlos_nuevo', password='ClaveVieja123'
-            )
+            self.client.login(username='carlos_nuevo', password='ClaveVieja123')
         )
 
     def test_la_contrasena_sigue_funcionando_despues_de_cambiar_username(self):

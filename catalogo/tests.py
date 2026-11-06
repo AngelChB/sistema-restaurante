@@ -12,12 +12,8 @@ from .models import Categoria, Producto
 class CatalogoViewsTests(TestCase):
     def setUp(self):
         User = get_user_model()
-        self.user = User.objects.create_user(
-            username='mesero1', password='test12345'
-        )
-        PerfilEmpleado.objects.create(
-            usuario=self.user, rol=PerfilEmpleado.Rol.MESERO
-        )
+        self.user = User.objects.create_user(username='mesero1', password='test12345')
+        PerfilEmpleado.objects.create(usuario=self.user, rol=PerfilEmpleado.Rol.MESERO)
         self.staff = User.objects.create_user(
             username='admin1', password='test12345', is_staff=True
         )
@@ -39,7 +35,7 @@ class CatalogoViewsTests(TestCase):
         response = self.client.get(reverse('lista_productos'))
         self.assertRedirects(
             response,
-            f"{reverse('login')}?next={reverse('lista_productos')}",
+            f'{reverse("login")}?next={reverse("lista_productos")}',
         )
 
     def test_usuario_autenticado_puede_ver_la_lista_de_productos(self):
@@ -52,9 +48,7 @@ class CatalogoViewsTests(TestCase):
             categoria=self.categoria, nombre='Pan', precio='3.00', disponible=True
         )
         self.client.login(username='mesero1', password='test12345')
-        response = self.client.get(
-            reverse('lista_productos'), {'buscar': 'caf'}
-        )
+        response = self.client.get(reverse('lista_productos'), {'buscar': 'caf'})
         self.assertContains(response, '>Café<')
         self.assertNotContains(response, '>Pan<')
 

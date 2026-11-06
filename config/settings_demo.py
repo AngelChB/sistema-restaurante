@@ -1,6 +1,9 @@
 """Configuración local de demostración; mantiene separada la base habitual."""
+
 from copy import deepcopy
+
 from decouple import config
+
 from .settings import *
 
 DATABASES = deepcopy(DATABASES)

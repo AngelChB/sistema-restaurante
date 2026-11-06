@@ -1,6 +1,5 @@
 from django import forms
-from django.contrib.auth import get_user_model
-from django.contrib.auth import password_validation
+from django.contrib.auth import get_user_model, password_validation
 from django.contrib.auth.forms import SetPasswordForm, UserCreationForm
 from django.db import transaction
 
@@ -92,7 +91,8 @@ class EmpleadoCrearForm(UserCreationForm):
                 PerfilEmpleado.objects.update_or_create(
                     usuario=user,
                     defaults={
-                        'rol': self.cleaned_data.get('rol') or PerfilEmpleado.Rol.MESERO,
+                        'rol': self.cleaned_data.get('rol')
+                        or PerfilEmpleado.Rol.MESERO,
                         'telefono': self.cleaned_data.get('telefono', ''),
                     },
                 )
@@ -176,9 +176,9 @@ class CambiarPasswordForm(SetPasswordForm):
                 'autocomplete': 'new-password',
             }
         )
-        self.fields['new_password1'].help_text = (
-            password_validation.password_validators_help_texts()
-        )
+        self.fields[
+            'new_password1'
+        ].help_text = password_validation.password_validators_help_texts()
         self.fields['new_password2'].label = 'Confirmar nueva contraseña'
         self.fields['new_password2'].widget.attrs.update(
             {
@@ -207,9 +207,7 @@ class CambiarUsuarioForm(forms.ModelForm):
     def clean_username(self):
         username = self.cleaned_data.get('username')
         if not username:
-            raise forms.ValidationError(
-                'El nombre de usuario no puede estar vacío.'
-            )
+            raise forms.ValidationError('El nombre de usuario no puede estar vacío.')
         duplicado = User.objects.filter(username__iexact=username).exclude(
             pk=self.instance.pk
         )

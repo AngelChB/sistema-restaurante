@@ -52,9 +52,7 @@ class DetallePedidoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['producto'].queryset = Producto.objects.filter(
-            disponible=True
-        )
+        self.fields['producto'].queryset = Producto.objects.filter(disponible=True)
         self.fields['producto'].required = False
         self.fields['cantidad'].required = False
 
@@ -82,9 +80,7 @@ class BaseDetallePedidoFormSet(forms.BaseInlineFormSet):
                 continue
             cantidad = form.cleaned_data.get('cantidad')
             if cantidad is None or cantidad < 1:
-                form.add_error(
-                    'cantidad', 'La cantidad debe ser mayor o igual a 1.'
-                )
+                form.add_error('cantidad', 'La cantidad debe ser mayor o igual a 1.')
                 continue
             if producto.pk in productos:
                 form.add_error(
@@ -95,9 +91,7 @@ class BaseDetallePedidoFormSet(forms.BaseInlineFormSet):
             productos.append(producto.pk)
             hay_detalles = True
         if not hay_detalles:
-            raise forms.ValidationError(
-                'Debes agregar al menos un producto al pedido.'
-            )
+            raise forms.ValidationError('Debes agregar al menos un producto al pedido.')
 
 
 DetallePedidoFormSet = forms.inlineformset_factory(

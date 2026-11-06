@@ -30,7 +30,10 @@ class ProveedorForm(forms.ModelForm):
         }
         widgets = {
             'razon_social': forms.TextInput(
-                attrs={'class': 'form-input', 'placeholder': 'Ej. Distribuidora del Norte'}
+                attrs={
+                    'class': 'form-input',
+                    'placeholder': 'Ej. Distribuidora del Norte',
+                }
             ),
             'ruc': forms.TextInput(
                 attrs={'class': 'form-input', 'placeholder': 'Ej. 20123456789'}
@@ -53,18 +56,12 @@ class ProveedorForm(forms.ModelForm):
     def clean_razon_social(self):
         razon_social = self.cleaned_data.get('razon_social')
         if not razon_social:
-            raise forms.ValidationError(
-                'La razón social no puede estar vacía.'
-            )
-        proveedores = Proveedor.objects.filter(
-            razon_social__iexact=razon_social
-        )
+            raise forms.ValidationError('La razón social no puede estar vacía.')
+        proveedores = Proveedor.objects.filter(razon_social__iexact=razon_social)
         if self.instance.pk:
             proveedores = proveedores.exclude(pk=self.instance.pk)
         if proveedores.exists():
-            raise forms.ValidationError(
-                'Ya existe un proveedor con esa razón social.'
-            )
+            raise forms.ValidationError('Ya existe un proveedor con esa razón social.')
         return razon_social
 
     def clean_ruc(self):
@@ -73,16 +70,12 @@ class ProveedorForm(forms.ModelForm):
             return None
         ruc = ruc.strip()
         if not re.fullmatch(r'\d{11}', ruc):
-            raise forms.ValidationError(
-                'El RUC debe tener exactamente 11 dígitos.'
-            )
+            raise forms.ValidationError('El RUC debe tener exactamente 11 dígitos.')
         proveedores = Proveedor.objects.filter(ruc=ruc)
         if self.instance.pk:
             proveedores = proveedores.exclude(pk=self.instance.pk)
         if proveedores.exists():
-            raise forms.ValidationError(
-                'Ya existe un proveedor con ese RUC.'
-            )
+            raise forms.ValidationError('Ya existe un proveedor con ese RUC.')
         return ruc
 
 
@@ -167,9 +160,11 @@ class DetalleCompraForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['ingrediente'].queryset = Ingrediente.objects.filter(
-            activo=True
-        ).select_related('unidad_medida').order_by('nombre')
+        self.fields['ingrediente'].queryset = (
+            Ingrediente.objects.filter(activo=True)
+            .select_related('unidad_medida')
+            .order_by('nombre')
+        )
         self.fields['ingrediente'].required = False
         self.fields['cantidad'].required = False
         self.fields['costo_unitario'].required = False
@@ -177,17 +172,13 @@ class DetalleCompraForm(forms.ModelForm):
     def clean_cantidad(self):
         cantidad = self.cleaned_data.get('cantidad')
         if cantidad is not None and cantidad <= 0:
-            raise forms.ValidationError(
-                'La cantidad debe ser mayor que cero.'
-            )
+            raise forms.ValidationError('La cantidad debe ser mayor que cero.')
         return cantidad
 
     def clean_costo_unitario(self):
         costo_unitario = self.cleaned_data.get('costo_unitario')
         if costo_unitario is not None and costo_unitario < 0:
-            raise forms.ValidationError(
-                'El costo unitario no puede ser negativo.'
-            )
+            raise forms.ValidationError('El costo unitario no puede ser negativo.')
         return costo_unitario
 
 
@@ -208,9 +199,7 @@ class BaseDetalleCompraFormSet(forms.BaseInlineFormSet):
                 continue
             cantidad = form.cleaned_data.get('cantidad')
             if cantidad is None or cantidad <= 0:
-                form.add_error(
-                    'cantidad', 'La cantidad debe ser mayor que cero.'
-                )
+                form.add_error('cantidad', 'La cantidad debe ser mayor que cero.')
                 continue
             costo_unitario = form.cleaned_data.get('costo_unitario')
             if costo_unitario is None or costo_unitario < 0:

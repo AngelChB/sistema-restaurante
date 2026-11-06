@@ -30,9 +30,7 @@ def permisos(request):
     contexto['rol_usuario_nombre'] = (
         perfil.get_rol_display() if perfil is not None else None
     )
-    contexto['es_administrador'] = tiene_roles(
-        user, [PerfilEmpleado.Rol.ADMINISTRADOR]
-    )
+    contexto['es_administrador'] = tiene_roles(user, [PerfilEmpleado.Rol.ADMINISTRADOR])
     contexto['puede_ver_mesas'] = tiene_roles(
         user, [PerfilEmpleado.Rol.ADMINISTRADOR, PerfilEmpleado.Rol.MESERO]
     )

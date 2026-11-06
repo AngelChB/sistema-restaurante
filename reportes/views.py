@@ -1,5 +1,4 @@
 import csv
-from core.fechas import parsear_fecha, limites_fechas
 from decimal import Decimal
 
 from django.contrib import messages
@@ -9,6 +8,7 @@ from django.shortcuts import render
 from django.utils import timezone
 
 from caja.models import Pago
+from core.fechas import limites_fechas, parsear_fecha
 from pedidos.models import DetallePedido
 from personal.models import PerfilEmpleado
 from personal.permisos import rol_requerido
@@ -42,9 +42,7 @@ def _rango_fechas(request):
     fecha_desde = parsear_fecha(texto_desde)
     fecha_hasta = parsear_fecha(texto_hasta)
 
-    if (texto_desde or texto_hasta) and (
-        fecha_desde is None or fecha_hasta is None
-    ):
+    if (texto_desde or texto_hasta) and (fecha_desde is None or fecha_hasta is None):
         messages.error(
             request,
             'Las fechas ingresadas no son válidas, se usará la fecha actual.',
@@ -140,26 +138,32 @@ def reporte_ventas(request):
         total_vendido / Decimal(cantidad_pagos) if cantidad_pagos else Decimal('0')
     )
 
-    return render(request, 'reportes/ventas.html', {
-        'total_vendido': total_vendido,
-        'cantidad_pagos': cantidad_pagos,
-        'ticket_promedio': ticket_promedio,
-        'total_efectivo': totales['total_efectivo'] or Decimal('0'),
-        'total_tarjeta': totales['total_tarjeta'] or Decimal('0'),
-        'total_yape': totales['total_yape'] or Decimal('0'),
-        'total_plin': totales['total_plin'] or Decimal('0'),
-        'pagos_recientes': pagos[:10],
-        'productos_mas_vendidos': _productos_mas_vendidos(inicio, fin),
-        'ventas_por_dia': _ventas_por_dia(pagos),
-        'fecha_desde': fecha_desde,
-        'fecha_hasta': fecha_hasta,
-    })
+    return render(
+        request,
+        'reportes/ventas.html',
+        {
+            'total_vendido': total_vendido,
+            'cantidad_pagos': cantidad_pagos,
+            'ticket_promedio': ticket_promedio,
+            'total_efectivo': totales['total_efectivo'] or Decimal('0'),
+            'total_tarjeta': totales['total_tarjeta'] or Decimal('0'),
+            'total_yape': totales['total_yape'] or Decimal('0'),
+            'total_plin': totales['total_plin'] or Decimal('0'),
+            'pagos_recientes': pagos[:10],
+            'productos_mas_vendidos': _productos_mas_vendidos(inicio, fin),
+            'ventas_por_dia': _ventas_por_dia(pagos),
+            'fecha_desde': fecha_desde,
+            'fecha_hasta': fecha_hasta,
+        },
+    )
 
 
 def _texto_csv(valor):
     """Exporta texto editable como texto, incluso al abrirlo en una hoja de cálculo."""
     texto = str(valor)
-    if texto.startswith(('\t', '\r', '\n')) or texto.lstrip().startswith(('=', '+', '-', '@')):
+    if texto.startswith(('\t', '\r', '\n')) or texto.lstrip().startswith(
+        ('=', '+', '-', '@')
+    ):
         return "'" + texto
     return texto
 
@@ -179,18 +183,22 @@ def exportar_ventas_csv(request):
     escritor.writerow(COLUMNAS_CSV)
 
     for pago in pagos:
-        escritor.writerow([
-            pago.id,
-            timezone.localtime(pago.fecha_pago).strftime('%d/%m/%Y %H:%M'),
-            pago.pedido_id,
-            pago.pedido.mesa.numero,
-            _texto_csv(pago.pedido.mesero.get_full_name() or pago.pedido.mesero.username),
-            _texto_csv(pago.cajero.get_full_name() or pago.cajero.username),
-            pago.get_metodo_display(),
-            f'{pago.monto:.2f}',
-            f'{pago.monto_recibido:.2f}' if pago.monto_recibido is not None else '',
-            f'{pago.vuelto:.2f}',
-            _texto_csv(pago.referencia),
-        ])
+        escritor.writerow(
+            [
+                pago.id,
+                timezone.localtime(pago.fecha_pago).strftime('%d/%m/%Y %H:%M'),
+                pago.pedido_id,
+                pago.pedido.mesa.numero,
+                _texto_csv(
+                    pago.pedido.mesero.get_full_name() or pago.pedido.mesero.username
+                ),
+                _texto_csv(pago.cajero.get_full_name() or pago.cajero.username),
+                pago.get_metodo_display(),
+                f'{pago.monto:.2f}',
+                f'{pago.monto_recibido:.2f}' if pago.monto_recibido is not None else '',
+                f'{pago.vuelto:.2f}',
+                _texto_csv(pago.referencia),
+            ]
+        )
 
     return respuesta

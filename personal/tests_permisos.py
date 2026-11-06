@@ -11,9 +11,7 @@ User = get_user_model()
 
 
 def crear_usuario(username, rol):
-    usuario = User.objects.create_user(
-        username=username, password='test12345'
-    )
+    usuario = User.objects.create_user(username=username, password='test12345')
     PerfilEmpleado.objects.create(usuario=usuario, rol=rol)
     return usuario
 
@@ -46,9 +44,7 @@ class PermisosPorRolTests(TestCase):
             email='super@restaurante.com',
             password='test12345',
         )
-        self.administrador = crear_usuario(
-            'admin1', PerfilEmpleado.Rol.ADMINISTRADOR
-        )
+        self.administrador = crear_usuario('admin1', PerfilEmpleado.Rol.ADMINISTRADOR)
         self.mesero = crear_usuario('mesero1', PerfilEmpleado.Rol.MESERO)
         self.cocinero = crear_usuario('cocinero1', PerfilEmpleado.Rol.COCINA)
         self.cajero = crear_usuario('cajero1', PerfilEmpleado.Rol.CAJERO)
@@ -64,16 +60,12 @@ class PermisosPorRolTests(TestCase):
     def _acceder_a(self, urls):
         for nombre in urls:
             with self.subTest(url=nombre):
-                self.assertEqual(
-                    self.client.get(reverse(nombre)).status_code, 200
-                )
+                self.assertEqual(self.client.get(reverse(nombre)).status_code, 200)
 
     def _bloqueado_en(self, urls):
         for nombre in urls:
             with self.subTest(url=nombre):
-                self.assertEqual(
-                    self.client.get(reverse(nombre)).status_code, 403
-                )
+                self.assertEqual(self.client.get(reverse(nombre)).status_code, 403)
 
     def test_superusuario_tiene_acceso_a_todos_los_modulos(self):
         self._login(self.superusuario)
@@ -102,7 +94,14 @@ class PermisosPorRolTests(TestCase):
     def test_cocina_no_tiene_acceso_a_mesas_pedidos_sala_caja_ni_personal(self):
         self._login(self.cocinero)
         self._bloqueado_en(
-            ['lista_mesas', 'lista_pedidos', 'crear_pedido', 'panel_sala', 'panel_caja', 'lista_empleados']
+            [
+                'lista_mesas',
+                'lista_pedidos',
+                'crear_pedido',
+                'panel_sala',
+                'panel_caja',
+                'lista_empleados',
+            ]
         )
 
     def test_cajero_tiene_acceso_al_panel_de_caja_y_al_catalogo(self):
@@ -112,7 +111,14 @@ class PermisosPorRolTests(TestCase):
     def test_cajero_no_tiene_acceso_a_cocina_pedidos_sala_ni_personal(self):
         self._login(self.cajero)
         self._bloqueado_en(
-            ['lista_mesas', 'lista_pedidos', 'crear_pedido', 'panel_cocina', 'panel_sala', 'lista_empleados']
+            [
+                'lista_mesas',
+                'lista_pedidos',
+                'crear_pedido',
+                'panel_cocina',
+                'panel_sala',
+                'lista_empleados',
+            ]
         )
 
     def test_mesero_tiene_acceso_a_reservas(self):
@@ -224,9 +230,7 @@ class PermisosPorRolTests(TestCase):
     def test_el_context_processor_expone_el_rol_del_usuario(self):
         self._login(self.cajero)
         response = self.client.get(reverse('dashboard'))
-        self.assertEqual(
-            response.context['rol_usuario'], PerfilEmpleado.Rol.CAJERO
-        )
+        self.assertEqual(response.context['rol_usuario'], PerfilEmpleado.Rol.CAJERO)
         self.assertFalse(response.context['es_administrador'])
         self.assertTrue(response.context['puede_ver_caja'])
         self.assertFalse(response.context['puede_ver_cocina'])

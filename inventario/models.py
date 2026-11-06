@@ -24,15 +24,9 @@ class Ingrediente(models.Model):
         UnidadMedida,
         on_delete=models.PROTECT,
     )
-    stock_actual = models.DecimalField(
-        max_digits=12, decimal_places=3, default=0
-    )
-    stock_minimo = models.DecimalField(
-        max_digits=12, decimal_places=3, default=0
-    )
-    costo_unitario = models.DecimalField(
-        max_digits=12, decimal_places=4, default=0
-    )
+    stock_actual = models.DecimalField(max_digits=12, decimal_places=3, default=0)
+    stock_minimo = models.DecimalField(max_digits=12, decimal_places=3, default=0)
+    costo_unitario = models.DecimalField(max_digits=12, decimal_places=4, default=0)
     activo = models.BooleanField(default=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
@@ -51,17 +45,17 @@ class Ingrediente(models.Model):
 
     def clean(self):
         if self.stock_actual is not None and self.stock_actual < 0:
-            raise ValidationError({
-                'stock_actual': 'El stock actual no puede ser negativo.'
-            })
+            raise ValidationError(
+                {'stock_actual': 'El stock actual no puede ser negativo.'}
+            )
         if self.stock_minimo is not None and self.stock_minimo < 0:
-            raise ValidationError({
-                'stock_minimo': 'El stock mínimo no puede ser negativo.'
-            })
+            raise ValidationError(
+                {'stock_minimo': 'El stock mínimo no puede ser negativo.'}
+            )
         if self.costo_unitario is not None and self.costo_unitario < 0:
-            raise ValidationError({
-                'costo_unitario': 'El costo unitario no puede ser negativo.'
-            })
+            raise ValidationError(
+                {'costo_unitario': 'El costo unitario no puede ser negativo.'}
+            )
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -97,9 +91,7 @@ class RecetaProducto(models.Model):
 
     def clean(self):
         if self.cantidad is not None and self.cantidad <= 0:
-            raise ValidationError({
-                'cantidad': 'La cantidad debe ser mayor que cero.'
-            })
+            raise ValidationError({'cantidad': 'La cantidad debe ser mayor que cero.'})
         if self.producto_id and self.ingrediente_id:
             duplicada = RecetaProducto.objects.filter(
                 producto_id=self.producto_id,
@@ -183,22 +175,15 @@ class MovimientoInventario(models.Model):
         ]
 
     def __str__(self):
-        return (
-            f'{self.get_tipo_display()} {self.cantidad} '
-            f'de {self.ingrediente.nombre}'
-        )
+        return f'{self.get_tipo_display()} {self.cantidad} de {self.ingrediente.nombre}'
 
     def clean(self):
         if self.cantidad is not None and self.cantidad <= 0:
-            raise ValidationError({
-                'cantidad': 'La cantidad debe ser mayor que cero.'
-            })
+            raise ValidationError({'cantidad': 'La cantidad debe ser mayor que cero.'})
 
     def save(self, *args, **kwargs):
         if self.pk:
-            raise ValidationError(
-                'Un movimiento ya creado no puede modificarse.'
-            )
+            raise ValidationError('Un movimiento ya creado no puede modificarse.')
         with transaction.atomic():
             ingrediente = Ingrediente.objects.select_for_update().get(
                 pk=self.ingrediente_id

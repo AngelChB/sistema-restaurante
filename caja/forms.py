@@ -15,21 +15,27 @@ class PagoForm(forms.ModelForm):
         }
         widgets = {
             'metodo': forms.Select(attrs={'class': 'form-input'}),
-            'monto_recibido': forms.NumberInput(attrs={
-                'class': 'form-input',
-                'step': '0.01',
-                'min': '0',
-                'placeholder': 'Opcional fuera de efectivo',
-            }),
-            'referencia': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'Opcional',
-            }),
-            'observacion': forms.Textarea(attrs={
-                'class': 'form-input',
-                'rows': 3,
-                'placeholder': 'Opcional',
-            }),
+            'monto_recibido': forms.NumberInput(
+                attrs={
+                    'class': 'form-input',
+                    'step': '0.01',
+                    'min': '0',
+                    'placeholder': 'Opcional fuera de efectivo',
+                }
+            ),
+            'referencia': forms.TextInput(
+                attrs={
+                    'class': 'form-input',
+                    'placeholder': 'Opcional',
+                }
+            ),
+            'observacion': forms.Textarea(
+                attrs={
+                    'class': 'form-input',
+                    'rows': 3,
+                    'placeholder': 'Opcional',
+                }
+            ),
         }
 
     def clean_monto_recibido(self):
@@ -52,21 +58,27 @@ class CierreCajaForm(forms.ModelForm):
             'observacion': 'Observación',
         }
         widgets = {
-            'monto_inicial': forms.NumberInput(attrs={
-                'class': 'form-input',
-                'step': '0.01',
-                'min': '0',
-            }),
-            'efectivo_contado': forms.NumberInput(attrs={
-                'class': 'form-input',
-                'step': '0.01',
-                'min': '0',
-            }),
-            'observacion': forms.Textarea(attrs={
-                'class': 'form-input',
-                'rows': 3,
-                'placeholder': 'Opcional',
-            }),
+            'monto_inicial': forms.NumberInput(
+                attrs={
+                    'class': 'form-input',
+                    'step': '0.01',
+                    'min': '0',
+                }
+            ),
+            'efectivo_contado': forms.NumberInput(
+                attrs={
+                    'class': 'form-input',
+                    'step': '0.01',
+                    'min': '0',
+                }
+            ),
+            'observacion': forms.Textarea(
+                attrs={
+                    'class': 'form-input',
+                    'rows': 3,
+                    'placeholder': 'Opcional',
+                }
+            ),
         }
 
     def clean_monto_inicial(self):
@@ -78,7 +90,5 @@ class CierreCajaForm(forms.ModelForm):
     def clean_efectivo_contado(self):
         efectivo_contado = self.cleaned_data.get('efectivo_contado')
         if efectivo_contado is not None and efectivo_contado < 0:
-            raise forms.ValidationError(
-                'El efectivo contado no puede ser negativo.'
-            )
+            raise forms.ValidationError('El efectivo contado no puede ser negativo.')
         return efectivo_contado

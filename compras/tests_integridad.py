@@ -1,22 +1,36 @@
 from datetime import date
 from decimal import Decimal
+
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.test import TestCase, RequestFactory
-from inventario.models import Ingrediente, UnidadMedida, MovimientoInventario
+from django.test import RequestFactory, TestCase
+
+from inventario.models import Ingrediente, MovimientoInventario, UnidadMedida
+
 from .models import Compra, DetalleCompra, Proveedor
 from .services import recibir_compra
 
 
 class ComprasIntegridadTests(TestCase):
     def setUp(self):
-        self.user = get_user_model().objects.create_superuser(username='compras', password='Clave123!')
+        self.user = get_user_model().objects.create_superuser(
+            username='compras', password='Clave123!'
+        )
         proveedor = Proveedor.objects.create(razon_social='Proveedor')
-        self.compra = Compra.objects.create(proveedor=proveedor, usuario=self.user, fecha_documento=date.today())
+        self.compra = Compra.objects.create(
+            proveedor=proveedor, usuario=self.user, fecha_documento=date.today()
+        )
         unidad = UnidadMedida.objects.create(nombre='Kilo', abreviatura='kg')
-        self.ingrediente = Ingrediente.objects.create(nombre='Arroz', unidad_medida=unidad)
-        self.detalle = DetalleCompra.objects.create(compra=self.compra, ingrediente=self.ingrediente, cantidad=5, costo_unitario=2)
+        self.ingrediente = Ingrediente.objects.create(
+            nombre='Arroz', unidad_medida=unidad
+        )
+        self.detalle = DetalleCompra.objects.create(
+            compra=self.compra,
+            ingrediente=self.ingrediente,
+            cantidad=5,
+            costo_unitario=2,
+        )
 
     def test_recepcion_actualiza_stock_solo_una_vez(self):
         recibir_compra(self.compra.pk, self.user)
@@ -54,7 +68,11 @@ class ComprasIntegridadTests(TestCase):
             self.detalle.save()
         with self.assertRaises(ValidationError):
             self.detalle.delete()
-        otro = Compra.objects.create(proveedor=self.compra.proveedor, usuario=self.user, fecha_documento=date.today())
+        otro = Compra.objects.create(
+            proveedor=self.compra.proveedor,
+            usuario=self.user,
+            fecha_documento=date.today(),
+        )
         self.detalle.compra = otro
         with self.assertRaises(ValidationError):
             self.detalle.save()
@@ -65,7 +83,12 @@ class ComprasIntegridadTests(TestCase):
         self.compra.estado = Compra.Estado.CANCELADA
         self.compra.save()
         with self.assertRaises(ValidationError):
-            DetalleCompra.objects.create(compra=self.compra, ingrediente=self.ingrediente, cantidad=3, costo_unitario=2)
+            DetalleCompra.objects.create(
+                compra=self.compra,
+                ingrediente=self.ingrediente,
+                cantidad=3,
+                costo_unitario=2,
+            )
 
     def test_no_se_puede_eliminar_compra_recibida(self):
         recibir_compra(self.compra.pk, self.user)

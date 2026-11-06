@@ -10,12 +10,8 @@ from .models import Mesa
 class MesaViewsTests(TestCase):
     def setUp(self):
         User = get_user_model()
-        self.user = User.objects.create_user(
-            username='mesero1', password='test12345'
-        )
-        PerfilEmpleado.objects.create(
-            usuario=self.user, rol=PerfilEmpleado.Rol.MESERO
-        )
+        self.user = User.objects.create_user(username='mesero1', password='test12345')
+        PerfilEmpleado.objects.create(usuario=self.user, rol=PerfilEmpleado.Rol.MESERO)
         self.staff = User.objects.create_user(
             username='admin1', password='test12345', is_staff=True
         )
@@ -27,7 +23,7 @@ class MesaViewsTests(TestCase):
         response = self.client.get(reverse('lista_mesas'))
         self.assertRedirects(
             response,
-            f"{reverse('login')}?next={reverse('lista_mesas')}",
+            f'{reverse("login")}?next={reverse("lista_mesas")}',
         )
 
     def test_usuario_autenticado_puede_ver_la_lista_de_mesas(self):

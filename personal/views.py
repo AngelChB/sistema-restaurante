@@ -1,10 +1,11 @@
-from core.paginacion import paginar
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+
+from core.paginacion import paginar
 
 from .forms import (
     CambiarPasswordForm,
@@ -36,12 +37,16 @@ def lista_empleados(request):
     if rol in [codigo for codigo, _ in PerfilEmpleado.Rol.choices]:
         usuarios = usuarios.filter(perfil_empleado__rol=rol)
 
-    return render(request, 'personal/lista.html', {
-        'usuarios': paginar(request, usuarios),
-        'buscar': buscar,
-        'rol': rol,
-        'roles': PerfilEmpleado.Rol.choices,
-    })
+    return render(
+        request,
+        'personal/lista.html',
+        {
+            'usuarios': paginar(request, usuarios),
+            'buscar': buscar,
+            'rol': rol,
+            'roles': PerfilEmpleado.Rol.choices,
+        },
+    )
 
 
 @rol_requerido(PerfilEmpleado.Rol.ADMINISTRADOR)
@@ -55,10 +60,14 @@ def crear_empleado(request):
     else:
         form = EmpleadoCrearForm()
 
-    return render(request, 'personal/formulario.html', {
-        'form': form,
-        'titulo': 'Nuevo empleado',
-    })
+    return render(
+        request,
+        'personal/formulario.html',
+        {
+            'form': form,
+            'titulo': 'Nuevo empleado',
+        },
+    )
 
 
 @rol_requerido(PerfilEmpleado.Rol.ADMINISTRADOR)
@@ -75,9 +84,7 @@ def editar_empleado(request, pk):
         if form.is_valid():
             error = False
             if request.user.pk == empleado.pk and not form.cleaned_data['is_active']:
-                form.add_error(
-                    'is_active', 'No puedes desactivar tu propio usuario.'
-                )
+                form.add_error('is_active', 'No puedes desactivar tu propio usuario.')
                 error = True
             if (
                 request.user.pk == empleado.pk
@@ -106,11 +113,15 @@ def editar_empleado(request, pk):
             },
         )
 
-    return render(request, 'personal/formulario.html', {
-        'form': form,
-        'empleado': empleado,
-        'titulo': 'Editar empleado',
-    })
+    return render(
+        request,
+        'personal/formulario.html',
+        {
+            'form': form,
+            'empleado': empleado,
+            'titulo': 'Editar empleado',
+        },
+    )
 
 
 @rol_requerido(PerfilEmpleado.Rol.ADMINISTRADOR)
@@ -126,11 +137,15 @@ def cambiar_password_empleado(request, pk):
     else:
         form = CambiarPasswordForm(empleado)
 
-    return render(request, 'personal/cambiar_password.html', {
-        'form': form,
-        'empleado': empleado,
-        'titulo': 'Cambiar contraseña',
-    })
+    return render(
+        request,
+        'personal/cambiar_password.html',
+        {
+            'form': form,
+            'empleado': empleado,
+            'titulo': 'Cambiar contraseña',
+        },
+    )
 
 
 @rol_requerido(PerfilEmpleado.Rol.ADMINISTRADOR)
@@ -141,18 +156,20 @@ def cambiar_usuario_empleado(request, pk):
         form = CambiarUsuarioForm(request.POST, instance=empleado)
         if form.is_valid():
             form.save()
-            messages.success(
-                request, 'Nombre de usuario actualizado correctamente.'
-            )
+            messages.success(request, 'Nombre de usuario actualizado correctamente.')
             return redirect('lista_empleados')
     else:
         form = CambiarUsuarioForm(instance=empleado)
 
-    return render(request, 'personal/cambiar_usuario.html', {
-        'form': form,
-        'empleado': empleado,
-        'titulo': 'Cambiar nombre de usuario',
-    })
+    return render(
+        request,
+        'personal/cambiar_usuario.html',
+        {
+            'form': form,
+            'empleado': empleado,
+            'titulo': 'Cambiar nombre de usuario',
+        },
+    )
 
 
 @rol_requerido(PerfilEmpleado.Rol.ADMINISTRADOR)

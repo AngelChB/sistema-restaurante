@@ -18,12 +18,8 @@ from .services import recibir_compra
 class ComprasModelTests(TestCase):
     def setUp(self):
         User = get_user_model()
-        self.usuario = User.objects.create_user(
-            username='admin1', password='test12345'
-        )
-        self.unidad = UnidadMedida.objects.create(
-            nombre='Kilogramo', abreviatura='kg'
-        )
+        self.usuario = User.objects.create_user(username='admin1', password='test12345')
+        self.unidad = UnidadMedida.objects.create(nombre='Kilogramo', abreviatura='kg')
         self.harina = Ingrediente.objects.create(
             nombre='Harina',
             unidad_medida=self.unidad,
@@ -151,12 +147,8 @@ class ComprasModelTests(TestCase):
 class RecibirCompraTests(TestCase):
     def setUp(self):
         User = get_user_model()
-        self.usuario = User.objects.create_user(
-            username='admin1', password='test12345'
-        )
-        self.unidad = UnidadMedida.objects.create(
-            nombre='Kilogramo', abreviatura='kg'
-        )
+        self.usuario = User.objects.create_user(username='admin1', password='test12345')
+        self.unidad = UnidadMedida.objects.create(nombre='Kilogramo', abreviatura='kg')
         self.harina = Ingrediente.objects.create(
             nombre='Harina',
             unidad_medida=self.unidad,
@@ -199,21 +191,15 @@ class RecibirCompraTests(TestCase):
 
     def test_recibir_una_compra_aumenta_el_stock(self):
         compra = self._crear_compra()
-        self._agregar_detalle(
-            compra, self.harina, Decimal('50'), Decimal('5.0000')
-        )
+        self._agregar_detalle(compra, self.harina, Decimal('50'), Decimal('5.0000'))
         recibir_compra(compra.pk, self.usuario)
         self.harina.refresh_from_db()
         self.assertEqual(self.harina.stock_actual, Decimal('150'))
 
     def test_recibir_una_compra_crea_movimientos_de_entrada(self):
         compra = self._crear_compra()
-        self._agregar_detalle(
-            compra, self.harina, Decimal('50'), Decimal('5.0000')
-        )
-        self._agregar_detalle(
-            compra, self.azucar, Decimal('20'), Decimal('4.0000')
-        )
+        self._agregar_detalle(compra, self.harina, Decimal('50'), Decimal('5.0000'))
+        self._agregar_detalle(compra, self.azucar, Decimal('20'), Decimal('4.0000'))
         recibir_compra(compra.pk, self.usuario)
         movimientos = MovimientoInventario.objects.filter(compra=compra)
         self.assertEqual(movimientos.count(), 2)
@@ -228,9 +214,7 @@ class RecibirCompraTests(TestCase):
 
     def test_el_movimiento_guarda_compra_usuario_y_stocks(self):
         compra = self._crear_compra()
-        self._agregar_detalle(
-            compra, self.harina, Decimal('50'), Decimal('5.0000')
-        )
+        self._agregar_detalle(compra, self.harina, Decimal('50'), Decimal('5.0000'))
         recibir_compra(compra.pk, self.usuario)
         movimiento = MovimientoInventario.objects.get(compra=compra)
         self.assertEqual(movimiento.compra, compra)
@@ -238,24 +222,18 @@ class RecibirCompraTests(TestCase):
         self.assertEqual(movimiento.stock_anterior, Decimal('100'))
         self.assertEqual(movimiento.stock_resultante, Decimal('150'))
         self.assertEqual(movimiento.referencia, f'COMPRA-{compra.id}')
-        self.assertEqual(
-            movimiento.motivo, f'Ingreso por compra #{compra.id}'
-        )
+        self.assertEqual(movimiento.motivo, f'Ingreso por compra #{compra.id}')
 
     def test_recibir_una_compra_actualiza_el_costo_unitario(self):
         compra = self._crear_compra()
-        self._agregar_detalle(
-            compra, self.harina, Decimal('50'), Decimal('4.5000')
-        )
+        self._agregar_detalle(compra, self.harina, Decimal('50'), Decimal('4.5000'))
         recibir_compra(compra.pk, self.usuario)
         self.harina.refresh_from_db()
         self.assertEqual(self.harina.costo_unitario, Decimal('4.5000'))
 
     def test_la_compra_cambia_a_recibida_y_guarda_la_fecha(self):
         compra = self._crear_compra()
-        self._agregar_detalle(
-            compra, self.harina, Decimal('50'), Decimal('5.0000')
-        )
+        self._agregar_detalle(compra, self.harina, Decimal('50'), Decimal('5.0000'))
         recibir_compra(compra.pk, self.usuario)
         compra.refresh_from_db()
         self.assertEqual(compra.estado, Compra.Estado.RECIBIDA)
@@ -263,23 +241,17 @@ class RecibirCompraTests(TestCase):
 
     def test_una_compra_no_puede_recibirse_dos_veces(self):
         compra = self._crear_compra()
-        self._agregar_detalle(
-            compra, self.harina, Decimal('50'), Decimal('5.0000')
-        )
+        self._agregar_detalle(compra, self.harina, Decimal('50'), Decimal('5.0000'))
         recibir_compra(compra.pk, self.usuario)
         with self.assertRaises(ValidationError):
             recibir_compra(compra.pk, self.usuario)
         self.harina.refresh_from_db()
         self.assertEqual(self.harina.stock_actual, Decimal('150'))
-        self.assertEqual(
-            MovimientoInventario.objects.filter(compra=compra).count(), 1
-        )
+        self.assertEqual(MovimientoInventario.objects.filter(compra=compra).count(), 1)
 
     def test_una_compra_cancelada_no_puede_recibirse(self):
         compra = self._crear_compra()
-        self._agregar_detalle(
-            compra, self.harina, Decimal('50'), Decimal('5.0000')
-        )
+        self._agregar_detalle(compra, self.harina, Decimal('50'), Decimal('5.0000'))
         compra.estado = Compra.Estado.CANCELADA
         compra.save()
         with self.assertRaises(ValidationError):
@@ -300,12 +272,8 @@ class RecibirCompraTests(TestCase):
         self.harina.activo = False
         self.harina.save()
         compra = self._crear_compra()
-        self._agregar_detalle(
-            compra, self.harina, Decimal('50'), Decimal('5.0000')
-        )
-        self._agregar_detalle(
-            compra, self.azucar, Decimal('20'), Decimal('4.0000')
-        )
+        self._agregar_detalle(compra, self.harina, Decimal('50'), Decimal('5.0000'))
+        self._agregar_detalle(compra, self.azucar, Decimal('20'), Decimal('4.0000'))
         with self.assertRaises(ValidationError):
             recibir_compra(compra.pk, self.usuario)
         compra.refresh_from_db()
@@ -329,27 +297,19 @@ class ComprasViewsTests(TestCase):
         self.superusuario = User.objects.create_user(
             username='super1', password='test12345', is_superuser=True
         )
-        self.mesero = User.objects.create_user(
-            username='mesero1', password='test12345'
-        )
+        self.mesero = User.objects.create_user(username='mesero1', password='test12345')
         PerfilEmpleado.objects.create(
             usuario=self.mesero, rol=PerfilEmpleado.Rol.MESERO
         )
-        self.cajero = User.objects.create_user(
-            username='cajero1', password='test12345'
-        )
+        self.cajero = User.objects.create_user(username='cajero1', password='test12345')
         PerfilEmpleado.objects.create(
             usuario=self.cajero, rol=PerfilEmpleado.Rol.CAJERO
         )
-        self.cocina = User.objects.create_user(
-            username='cocina1', password='test12345'
-        )
+        self.cocina = User.objects.create_user(username='cocina1', password='test12345')
         PerfilEmpleado.objects.create(
             usuario=self.cocina, rol=PerfilEmpleado.Rol.COCINA
         )
-        self.unidad = UnidadMedida.objects.create(
-            nombre='Kilogramo', abreviatura='kg'
-        )
+        self.unidad = UnidadMedida.objects.create(nombre='Kilogramo', abreviatura='kg')
         self.harina = Ingrediente.objects.create(
             nombre='Harina',
             unidad_medida=self.unidad,
@@ -387,7 +347,7 @@ class ComprasViewsTests(TestCase):
         response = self.client.get(reverse('lista_compras'))
         self.assertRedirects(
             response,
-            f"{reverse('login')}?next={reverse('lista_compras')}",
+            f'{reverse("login")}?next={reverse("lista_compras")}',
         )
 
     def test_mesero_y_cajero_no_pueden_ver_las_compras(self):
@@ -543,9 +503,7 @@ class ComprasViewsTests(TestCase):
     def test_cocina_no_puede_editar_una_compra(self):
         compra = self._crear_compra()
         self.client.login(username='cocina1', password='test12345')
-        response = self.client.get(
-            reverse('editar_compra', args=[compra.pk])
-        )
+        response = self.client.get(reverse('editar_compra', args=[compra.pk]))
         self.assertEqual(response.status_code, 403)
 
     def test_no_se_puede_crear_una_compra_con_ingrediente_repetido(self):
@@ -576,9 +534,7 @@ class ComprasViewsTests(TestCase):
     def test_el_administrador_recibe_una_compra(self):
         compra = self._crear_compra()
         self.client.login(username='admin1', password='test12345')
-        response = self.client.post(
-            reverse('recibir_compra', args=[compra.pk])
-        )
+        response = self.client.post(reverse('recibir_compra', args=[compra.pk]))
         self.assertRedirects(response, reverse('detalle_compra', args=[compra.pk]))
         compra.refresh_from_db()
         self.assertEqual(compra.estado, Compra.Estado.RECIBIDA)
@@ -588,9 +544,7 @@ class ComprasViewsTests(TestCase):
     def test_el_administrador_cancela_una_compra(self):
         compra = self._crear_compra()
         self.client.login(username='admin1', password='test12345')
-        response = self.client.post(
-            reverse('cancelar_compra', args=[compra.pk])
-        )
+        response = self.client.post(reverse('cancelar_compra', args=[compra.pk]))
         self.assertRedirects(response, reverse('detalle_compra', args=[compra.pk]))
         compra.refresh_from_db()
         self.assertEqual(compra.estado, Compra.Estado.CANCELADA)
@@ -603,9 +557,7 @@ class ComprasViewsTests(TestCase):
             reverse('cancelar_compra', args=[compra.pk]), follow=True
         )
         mensajes = [str(m) for m in response.context.get('messages')]
-        self.assertTrue(
-            any('borrador' in mensaje.lower() for mensaje in mensajes)
-        )
+        self.assertTrue(any('borrador' in mensaje.lower() for mensaje in mensajes))
         compra.refresh_from_db()
         self.assertEqual(compra.estado, Compra.Estado.RECIBIDA)
 
@@ -626,9 +578,7 @@ class ComprasViewsTests(TestCase):
         response = self.client.get(reverse('lista_compras'))
         self.assertEqual(response.status_code, 200)
         compra = self._crear_compra()
-        response = self.client.post(
-            reverse('recibir_compra', args=[compra.pk])
-        )
+        response = self.client.post(reverse('recibir_compra', args=[compra.pk]))
         self.assertRedirects(response, reverse('detalle_compra', args=[compra.pk]))
         compra.refresh_from_db()
         self.assertEqual(compra.estado, Compra.Estado.RECIBIDA)

@@ -9,7 +9,7 @@ from django.utils import timezone
 from mesas.models import Mesa
 from personal.models import PerfilEmpleado
 
-from .forms import ClienteForm, ReservaForm
+from .forms import ClienteForm
 from .models import Cliente, Reserva
 
 
@@ -24,9 +24,7 @@ def _crear_cliente(**kwargs):
 
 
 def _crear_mesa(numero=1, capacidad=4, **kwargs):
-    return Mesa.objects.create(
-        numero=numero, capacidad=capacidad, **kwargs
-    )
+    return Mesa.objects.create(numero=numero, capacidad=capacidad, **kwargs)
 
 
 class ClienteModelTests(TestCase):
@@ -106,9 +104,7 @@ class ReservaModelTests(TestCase):
 
     def test_la_fecha_de_la_reserva_debe_ser_futura(self):
         with self.assertRaises(ValidationError):
-            self._crear_reserva(
-                fecha_hora=timezone.now() - timedelta(minutes=1)
-            )
+            self._crear_reserva(fecha_hora=timezone.now() - timedelta(minutes=1))
 
     def test_la_duracion_debe_ser_mayor_que_cero(self):
         with self.assertRaises(ValidationError):
@@ -116,9 +112,7 @@ class ReservaModelTests(TestCase):
 
     def test_la_duracion_define_el_fin_de_la_reserva(self):
         reserva = self._crear_reserva(duracion_minutos=90)
-        self.assertEqual(
-            reserva.fin, reserva.fecha_hora + timedelta(minutes=90)
-        )
+        self.assertEqual(reserva.fin, reserva.fecha_hora + timedelta(minutes=90))
 
     def test_no_se_pueden_solapar_reservas_activas_en_la_misma_mesa(self):
         self._crear_reserva(fecha_hora=_fecha_futura(), duracion_minutos=120)
@@ -146,9 +140,7 @@ class ReservaModelTests(TestCase):
         self.assertEqual(reserva2.estado, Reserva.Estado.PENDIENTE)
 
     def test_una_reserva_cancelada_no_bloquea_el_horario(self):
-        reserva1 = self._crear_reserva(
-            fecha_hora=_fecha_futura(), duracion_minutos=120
-        )
+        reserva1 = self._crear_reserva(fecha_hora=_fecha_futura(), duracion_minutos=120)
         reserva1.estado = Reserva.Estado.CANCELADA
         reserva1.save()
         reserva2 = self._crear_reserva(
@@ -182,21 +174,15 @@ class ReservasViewsTests(TestCase):
         PerfilEmpleado.objects.create(
             usuario=self.administrador, rol=PerfilEmpleado.Rol.ADMINISTRADOR
         )
-        self.mesero = User.objects.create_user(
-            username='mesero1', password='test12345'
-        )
+        self.mesero = User.objects.create_user(username='mesero1', password='test12345')
         PerfilEmpleado.objects.create(
             usuario=self.mesero, rol=PerfilEmpleado.Rol.MESERO
         )
-        self.cajero = User.objects.create_user(
-            username='cajero1', password='test12345'
-        )
+        self.cajero = User.objects.create_user(username='cajero1', password='test12345')
         PerfilEmpleado.objects.create(
             usuario=self.cajero, rol=PerfilEmpleado.Rol.CAJERO
         )
-        self.cocina = User.objects.create_user(
-            username='cocina1', password='test12345'
-        )
+        self.cocina = User.objects.create_user(username='cocina1', password='test12345')
         PerfilEmpleado.objects.create(
             usuario=self.cocina, rol=PerfilEmpleado.Rol.COCINA
         )
@@ -219,7 +205,7 @@ class ReservasViewsTests(TestCase):
         response = self.client.get(reverse('lista_reservas'))
         self.assertRedirects(
             response,
-            f"{reverse('login')}?next={reverse('lista_reservas')}",
+            f'{reverse("login")}?next={reverse("lista_reservas")}',
         )
 
     def test_cajero_y_cocina_no_pueden_ver_las_reservas(self):
@@ -252,9 +238,7 @@ class ReservasViewsTests(TestCase):
             },
         )
         reserva = Reserva.objects.get()
-        self.assertRedirects(
-            response, reverse('detalle_reserva', args=[reserva.pk])
-        )
+        self.assertRedirects(response, reverse('detalle_reserva', args=[reserva.pk]))
         self.assertEqual(reserva.usuario, self.mesero)
         self.assertEqual(reserva.estado, Reserva.Estado.PENDIENTE)
 
@@ -273,9 +257,7 @@ class ReservasViewsTests(TestCase):
             },
         )
         self.assertRedirects(response, reverse('lista_clientes'))
-        response = self.client.get(
-            reverse('editar_cliente', args=[self.cliente.pk])
-        )
+        response = self.client.get(reverse('editar_cliente', args=[self.cliente.pk]))
         self.assertEqual(response.status_code, 403)
 
     def test_el_administrador_edita_un_cliente(self):
@@ -315,12 +297,8 @@ class ReservasViewsTests(TestCase):
     def test_el_administrador_confirma_una_reserva(self):
         reserva = self._crear_reserva()
         self.client.login(username='admin1', password='test12345')
-        response = self.client.post(
-            reverse('confirmar_reserva', args=[reserva.pk])
-        )
-        self.assertRedirects(
-            response, reverse('detalle_reserva', args=[reserva.pk])
-        )
+        response = self.client.post(reverse('confirmar_reserva', args=[reserva.pk]))
+        self.assertRedirects(response, reverse('detalle_reserva', args=[reserva.pk]))
         reserva.refresh_from_db()
         self.assertEqual(reserva.estado, Reserva.Estado.CONFIRMADA)
 
@@ -335,10 +313,7 @@ class ReservasViewsTests(TestCase):
         reserva.refresh_from_db()
         self.assertEqual(reserva.estado, Reserva.Estado.PENDIENTE)
         self.assertTrue(
-            any(
-                'inactiva' in str(m).lower()
-                for m in response.context.get('messages')
-            )
+            any('inactiva' in str(m).lower() for m in response.context.get('messages'))
         )
 
     def test_no_se_puede_cambiar_el_estado_de_una_reserva_cancelada(self):
@@ -354,24 +329,18 @@ class ReservasViewsTests(TestCase):
         reserva = self._crear_reserva()
         self.client.login(username='admin1', password='test12345')
 
-        response = self.client.post(
-            reverse('confirmar_reserva', args=[reserva.pk])
-        )
+        response = self.client.post(reverse('confirmar_reserva', args=[reserva.pk]))
         reserva.refresh_from_db()
         self.assertEqual(reserva.estado, Reserva.Estado.CONFIRMADA)
 
-        response = self.client.post(
-            reverse('atender_reserva', args=[reserva.pk])
-        )
+        response = self.client.post(reverse('atender_reserva', args=[reserva.pk]))
         reserva.refresh_from_db()
         self.assertEqual(reserva.estado, Reserva.Estado.ATENDIDA)
 
         response = self.client.post(
             reverse('confirmar_reserva', args=[reserva.pk]), follow=True
         )
-        self.assertRedirects(
-            response, reverse('detalle_reserva', args=[reserva.pk])
-        )
+        self.assertRedirects(response, reverse('detalle_reserva', args=[reserva.pk]))
         reserva.refresh_from_db()
         self.assertEqual(reserva.estado, Reserva.Estado.ATENDIDA)
         self.assertTrue(
@@ -393,20 +362,14 @@ class ReservasViewsTests(TestCase):
     def test_el_detalle_muestra_botones_segun_el_estado(self):
         reserva = self._crear_reserva()
         self.client.login(username='admin1', password='test12345')
-        response = self.client.get(
-            reverse('detalle_reserva', args=[reserva.pk])
-        )
+        response = self.client.get(reverse('detalle_reserva', args=[reserva.pk]))
         self.assertContains(response, 'Confirmar reserva')
         self.assertContains(response, 'Cancelar reserva')
         self.assertNotContains(response, 'Marcar como atendida')
 
     def test_la_lista_filtra_por_fecha(self):
-        reserva_fecha_a = self._crear_reserva(
-            fecha_hora=_fecha_futura(dias=2)
-        )
-        reserva_fecha_b = self._crear_reserva(
-            fecha_hora=_fecha_futura(dias=3)
-        )
+        reserva_fecha_a = self._crear_reserva(fecha_hora=_fecha_futura(dias=2))
+        reserva_fecha_b = self._crear_reserva(fecha_hora=_fecha_futura(dias=3))
         self.client.login(username='admin1', password='test12345')
         fecha_local_a = timezone.localtime(reserva_fecha_a.fecha_hora).date()
         response = self.client.get(

@@ -11,35 +11,29 @@ def recibir_compra(compra_id, usuario):
     with transaction.atomic():
         compra = Compra.objects.select_for_update().get(pk=compra_id)
         if compra.estado != Compra.Estado.BORRADOR:
-            raise ValidationError(
-                'Solo se puede recibir una compra en borrador.'
-            )
+            raise ValidationError('Solo se puede recibir una compra en borrador.')
 
         detalles = list(
-            compra.detalles.select_related(
-                'ingrediente__unidad_medida'
-            ).order_by('id')
+            compra.detalles.select_related('ingrediente__unidad_medida').order_by('id')
         )
         if not detalles:
             raise ValidationError('La compra no tiene ingredientes.')
 
         ingrediente_ids = [detalle.ingrediente_id for detalle in detalles]
         ingredientes = list(
-            Ingrediente.objects.filter(
-                pk__in=ingrediente_ids
-            ).select_for_update().select_related('unidad_medida')
+            Ingrediente.objects.filter(pk__in=ingrediente_ids)
+            .select_for_update()
+            .select_related('unidad_medida')
         )
-        ingredientes_por_id = {ingrediente.pk: ingrediente for ingrediente in ingredientes}
+        ingredientes_por_id = {
+            ingrediente.pk: ingrediente for ingrediente in ingredientes
+        }
 
         ingredientes_inactivos = [
-            ingrediente
-            for ingrediente in ingredientes
-            if not ingrediente.activo
+            ingrediente for ingrediente in ingredientes if not ingrediente.activo
         ]
         if ingredientes_inactivos:
-            nombres = ', '.join(
-                sorted(i.nombre for i in ingredientes_inactivos)
-            )
+            nombres = ', '.join(sorted(i.nombre for i in ingredientes_inactivos))
             raise ValidationError(
                 f'Los siguientes ingredientes están inactivos: {nombres}.'
             )
@@ -62,9 +56,7 @@ def recibir_compra(compra_id, usuario):
             )
             movimiento.save()
             ingrediente.costo_unitario = detalle.costo_unitario
-            ingrediente.save(
-                update_fields=['costo_unitario', 'fecha_actualizacion']
-            )
+            ingrediente.save(update_fields=['costo_unitario', 'fecha_actualizacion'])
 
         compra.estado = Compra.Estado.RECIBIDA
         compra.fecha_recepcion = timezone.now()
