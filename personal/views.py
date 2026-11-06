@@ -1,3 +1,4 @@
+from core.paginacion import paginar
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.db import transaction
@@ -36,7 +37,7 @@ def lista_empleados(request):
         usuarios = usuarios.filter(perfil_empleado__rol=rol)
 
     return render(request, 'personal/lista.html', {
-        'usuarios': usuarios,
+        'usuarios': paginar(request, usuarios),
         'buscar': buscar,
         'rol': rol,
         'roles': PerfilEmpleado.Rol.choices,
@@ -68,6 +69,7 @@ def editar_empleado(request, pk):
         defaults={'rol': PerfilEmpleado.Rol.MESERO},
     )
 
+    era_staff = empleado.is_staff
     if request.method == 'POST':
         form = EmpleadoEditarForm(request.POST, instance=empleado)
         if form.is_valid():
@@ -79,7 +81,7 @@ def editar_empleado(request, pk):
                 error = True
             if (
                 request.user.pk == empleado.pk
-                and empleado.is_staff
+                and era_staff
                 and not form.cleaned_data['is_staff']
             ):
                 form.add_error(

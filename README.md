@@ -1,339 +1,164 @@
-# Sistema Restaurante
+# Sistema de gestión para restaurantes
 
-Sistema de gestión integral para restaurantes desarrollado en Django 6.0.8. Permite administrar mesas, pedidos, cocina, caja, inventario, compras, personal, reservas y reportes en una sola plataforma.
+Aplicación web desarrollada con **Python, Django y PostgreSQL** para coordinar mesas, pedidos, cocina, sala, caja e inventario. Incluye compras, reservas, personal y reportes de ventas.
 
-## Descripción general
+El proyecto permite seguir un pedido desde su registro hasta el cobro: al comenzar la preparación valida las recetas y descuenta ingredientes; al cobrar registra el pago y libera la mesa.
 
-El sistema cubre el flujo completo de operaciones de un restaurante:
+![Panel de cocina](docs/capturas/03-cocina.png)
 
-- **Gestión de mesas**: Control de estado (libre, ocupada, reservada, fuera de servicio) y capacidad
-- **Catálogo**: Categorías y productos con precios y disponibilidad
-- **Pedidos**: Registro de pedidos por mesa, detalles con productos, validación de estados y sincronización automática con el estado de la mesa
-- **Cocina**: Panel para visualizar y gestionar pedidos en preparación
-- **Sala**: Panel para meseros con vista de mesas y pedidos activos
-- **Caja**: Registro de pagos (efectivo, tarjeta, Yape, Plin) y cierre de caja diario con arqueo
-- **Inventario**: Ingredientes, unidades de medida, recetas por producto, movimientos de stock (entradas, salidas, ajustes) y alertas de stock mínimo
-- **Compras**: Proveedores, órdenes de compra (borrador, recibida, cancelada) y recepción que alimenta inventario
-- **Personal**: Perfiles de empleado con roles (Administrador, Mesero, Cocina, Cajero) y control de permisos por rol
-- **Reservas**: Clientes, reservas con validación de horarios, capacidad de mesa y conflictos
-- **Reportes**: Reportes de ventas y análisis
+## Funciones principales
 
-## Tecnologías utilizadas
+| Área | Funciones |
+|---|---|
+| Mesas y pedidos | Estados de mesa, productos, cantidades, observaciones y totales |
+| Cocina y sala | Preparación, pedidos listos y entrega; actualización cada 15 segundos |
+| Caja | Efectivo, tarjeta, Yape y Plin; cálculo de vuelto y cierre diario |
+| Inventario | Ingredientes, recetas, movimientos, stock mínimo e historial |
+| Compras | Proveedores, órdenes y recepción con ingreso de stock |
+| Reservas | Clientes, capacidad, validación de horarios y detección de solapamientos |
+| Personal | Roles de administrador, mesero, cocina y cajero; activación y desactivación |
+| Reportes | Ventas por periodo, métodos de pago, productos más vendidos y exportación CSV |
 
-| Tecnología | Versión | Uso |
-|------------|---------|-----|
-| Python | 3.12+ | Lenguaje base |
-| Django | 6.0.8 | Framework web |
-| PostgreSQL | 15+ | Base de datos principal |
-| psycopg | 3.3.4 | Driver PostgreSQL |
-| python-decouple | 3.8 | Gestión de variables de entorno |
+## Capturas
 
-## Requisitos previos
+Todas las imágenes utilizan datos ficticios de la base de demostración.
 
-- Python 3.12 o superior
-- PostgreSQL 15 o superior
-- pip (gestor de paquetes de Python)
-- Git (para clonar el repositorio)
+| Pantalla | Vista |
+|---|---|
+| Panel principal | [Abrir captura](docs/capturas/01-panel.png) |
+| Mesas | [Abrir captura](docs/capturas/02-mesas.png) |
+| Cocina | [Abrir captura](docs/capturas/03-cocina.png) |
+| Inventario | [Abrir captura](docs/capturas/04-inventario.png) |
+| Caja | [Abrir captura](docs/capturas/05-caja.png) |
+| Reportes | [Abrir captura](docs/capturas/06-reportes.png) |
+| Cocina en tablet | [Abrir captura](docs/capturas/07-cocina-tablet.png) |
+| Cocina en celular | [Abrir captura](docs/capturas/08-cocina-movil.png) |
 
-## Instalación paso a paso
+## Tecnologías
 
-### 1. Clonar el repositorio
+- Python 3.12+, Django 6.0.8 y PostgreSQL 15+.
+- psycopg 3.3.4 y python-decouple 3.8.
+- Plantillas Django, HTML, CSS y JavaScript sin dependencias de frontend.
+- Pruebas de Django y pruebas JavaScript con el ejecutor integrado de Node.js.
 
-```bash
-git clone <URL_DEL_REPOSITORIO>
+## Instalación local
+
+Necesitas Python, PostgreSQL y Git. En PowerShell:
+
+```powershell
+git clone https://github.com/AngelChB/sistema-restaurante.git
 cd sistema-restaurante
-```
-
-### 2. Crear y activar el entorno virtual
-
-```bash
-# Windows
 python -m venv venv
-venv\Scripts\activate
-
-# Linux/macOS
-python3 -m venv venv
-source venv/bin/activate
+.\venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+Copy-Item .env.example .env
+notepad .env
 ```
 
-### 3. Instalar dependencias
+Si ya tienes `.env`, conserva ese archivo. Completa las credenciales de PostgreSQL y genera una clave para `SECRET_KEY`:
 
-```bash
-pip install -r requirements.txt
+```powershell
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
 ```
 
-### 4. Configurar las variables de entorno
-
-Copie el archivo `.env.example` a `.env` y ajuste los valores:
-
-```bash
-cp .env.example .env
-```
-
-Edite el archivo `.env` con sus credenciales reales (ver sección **Configuración del archivo .env**).
-
-### 5. Crear la base de datos en PostgreSQL
+Desde pgAdmin, conectado a la base `postgres`, crea una base nueva si todavía no existe:
 
 ```sql
 CREATE DATABASE restaurante_db;
-CREATE USER postgres WITH PASSWORD 'su_password';
-GRANT ALL PRIVILEGES ON DATABASE restaurante_db TO postgres;
 ```
 
-> Ajuste nombre de base de datos, usuario y contraseña según lo que configure en `.env`.
+El usuario `postgres` ya se crea durante la instalación de PostgreSQL; utiliza su contraseña existente. Luego:
 
-### 6. Ejecutar migraciones
-
-```bash
+```powershell
+python -m pip check
+python manage.py check
 python manage.py migrate
-```
-
-### 7. Crear superusuario (opcional, para acceso al admin de Django)
-
-```bash
 python manage.py createsuperuser
-```
-
-### 8. Ejecutar el servidor de desarrollo
-
-```bash
 python manage.py runserver
 ```
 
-El sistema estará disponible en `http://127.0.0.1:8000/`
+Abre <http://127.0.0.1:8000/>. La cuenta del sistema web es independiente de la cuenta de PostgreSQL. Una base nueva no contiene productos ni recetas: puedes crear tus registros o usar la demostración separada.
 
-## Configuración del archivo .env
+## Demostración con datos ficticios
 
-El proyecto utiliza `python-decouple` para leer variables de entorno desde un archivo `.env`. **Nunca suba el archivo `.env` real a control de versiones**.
+La configuración `config.settings_demo` usa por defecto la base **restaurante_demo**, sin cambiar `DB_NAME` en `.env`. Las cookies de la demo tienen nombres propios para no interferir con la sesión habitual.
 
-Cree un archivo `.env` en la raíz del proyecto con las siguientes variables:
+Crea una vez la base desde pgAdmin:
 
-```env
-# Clave secreta de Django (generar una nueva para producción)
-SECRET_KEY=django-insecure-xxxxxxxxxxxxxxxxxxxxxxxx
-
-# Modo debug (True para desarrollo, False para producción)
-DEBUG=True
-
-# Base de datos PostgreSQL
-DB_NAME=restaurante_db
-DB_USER=postgres
-DB_PASSWORD=su_password_seguro
-DB_HOST=localhost
-DB_PORT=5432
+```sql
+CREATE DATABASE restaurante_demo;
 ```
 
-| Variable | Descripción | Requerida |
-|----------|-------------|-----------|
-| `SECRET_KEY` | Clave secreta para firmas criptográficas de Django | Sí |
-| `DEBUG` | Activa/desactiva modo debug (True/False) | No (default: False) |
-| `DB_NAME` | Nombre de la base de datos PostgreSQL | Sí |
-| `DB_USER` | Usuario de PostgreSQL | Sí |
-| `DB_PASSWORD` | Contraseña del usuario PostgreSQL | Sí |
-| `DB_HOST` | Host del servidor PostgreSQL | Sí |
-| `DB_PORT` | Puerto de PostgreSQL (default: 5432) | Sí |
+Ejecuta:
 
-## Cómo ejecutar el proyecto
-
-### Desarrollo
-
-```bash
-# Activar entorno virtual
-venv\Scripts\activate  # Windows
-source venv/bin/activate  # Linux/macOS
-
-# Ejecutar servidor
-python manage.py runserver
+```powershell
+python manage.py migrate --settings=config.settings_demo
+python manage.py cargar_demo --settings=config.settings_demo
+python manage.py runserver 127.0.0.1:8002 --settings=config.settings_demo
 ```
 
-### Producción (resumen)
+Abre <http://127.0.0.1:8002/>. El cargador exige una base vacía cuyo nombre termine en `_demo`; una segunda ejecución se detiene sin sobrescribir registros. `DB_NAME_DEMO` permite elegir otro nombre terminado en `_demo`.
 
-1. Configure `DEBUG=False` en `.env`
-2. Configure `ALLOWED_HOSTS` en `.env` con su dominio (ej: `ALLOWED_HOSTS=midominio.com,www.midominio.com`)
-3. Configure `SECRET_KEY` única y segura en `.env`
-4. Use un servidor WSGI como Gunicorn: `gunicorn config.wsgi:application`
-5. Configure un proxy inverso (Nginx) frente a Gunicorn con HTTPS
-6. Sirva archivos estáticos con `python manage.py collectstatic`
-7. Las siguientes configuraciones de seguridad se activan automáticamente cuando `DEBUG=False`:
-   - `SECURE_SSL_REDIRECT=True`
-   - `SESSION_COOKIE_SECURE=True`
-   - `CSRF_COOKIE_SECURE=True`
-   - `SECURE_HSTS_SECONDS=31536000`
-   - `SECURE_HSTS_INCLUDE_SUBDOMAINS=True`
-   - `SECURE_HSTS_PRELOAD=True`
-   - `SECURE_REFERRER_POLICY='strict-origin-when-cross-origin'`
+| Cuenta de demostración | Rol |
+|---|---|
+| `admin_demo` | Administrador del restaurante |
+| `mesero_demo` | Mesero |
+| `cocina_demo` | Cocina |
+| `caja_demo` | Cajero |
 
-## Módulos / Funcionalidades
+Clave de estas cuentas locales de demostración: **`DemoRestaurante123!`**. Son cuentas ficticias para ejecutar la demo en tu equipo; no son las credenciales de tu base habitual.
 
-### catalogo
-- **Categoria**: Clasificación de productos (nombre, descripción, activo)
-- **Producto**: Platos/bebidas con categoría, precio, disponibilidad
+La carga crea 8 mesas, 6 productos y recetas, 6 ingredientes, una compra recibida, 8 pedidos, 4 pagos y 2 reservas. Los ingresos de inventario, la preparación y los cobros pasan por las mismas operaciones del sistema. Las fechas se generan al cargar la demo; las capturas muestran la fecha de su preparación.
 
-### mesas
-- **Mesa**: Número único, capacidad, estado (Libre/Ocupada/Reservada/Fuera de servicio), ubicación
+[Guion de presentación de cinco minutos](docs/DEMO.md).
 
-### pedidos
-- **Pedido**: Vinculado a mesa y mesero, estados (Abierto, En preparación, Listo, Entregado, Pagado, Cancelado), observaciones, total calculado automáticamente
-- **DetallePedido**: Línea de pedido con producto, cantidad, precio unitario (congelado al momento), observación
+## Reglas implementadas
 
-### cocina
-- Panel para visualizar pedidos en preparación y cambiar estados
+- Los productos y cantidades solo se cambian mientras el pedido está abierto.
+- Un pedido pagado necesita un cobro por su total y no puede volver a abierto o cancelado conservando ese cobro.
+- Iniciar preparación valida recetas y stock y registra los consumos dentro de una transacción.
+- Los servicios de recepción y preparación evitan procesar la misma operación dos veces.
+- Las compras finalizadas y los datos de cobro quedan protegidos en los flujos de la aplicación.
+- Pedidos y reservas se serializan por mesa; cobros y cierres del día comparten un bloqueo en PostgreSQL.
+- El servidor comprueba roles y la propiedad de pedidos de meseros.
+- El CSV usa hora de Lima y protege los textos editables que podrían interpretarse como fórmulas.
 
-### sala
-- Panel para meseros con vista de mesas y pedidos activos
+## Pruebas
 
-### caja
-- **Pago**: Registro de pago por pedido (métodos: Efectivo, Tarjeta, Yape, Plin), cálculo de vuelto, validación de monto vs total del pedido
-- **CierreCaja**: Arqueo diario con monto inicial, ventas por método de pago, efectivo contado, diferencia, responsable
-
-### inventario
-- **UnidadMedida**: Unidades con abreviatura (kg, g, L, ml, und, etc.)
-- **Ingrediente**: Stock actual, stock mínimo, costo unitario, alerta de bajo stock
-- **RecetaProducto**: Relación producto-ingrediente con cantidad (para descontar stock al vender)
-- **MovimientoInventario**: Trazabilidad completa (Entrada, Salida, Ajuste positivo/negativo), vinculado a pedido o compra, stock anterior/resultante, inmutable una vez creado
-
-### compras
-- **Proveedor**: Razón social, RUC, contacto, teléfono, email, dirección
-- **Compra**: Estado (Borrador, Recibida, Cancelada), número de documento, fecha, observación, total calculado
-- **DetalleCompra**: Ingrediente, cantidad, costo unitario
-
-### personal
-- **PerfilEmpleado**: Extiende User de Django con rol (Administrador, Mesero, Cocina, Cajero), teléfono
-- **Permisos por rol**: Control de acceso a vistas mediante `personal.permisos` y context processor
-
-### reservas
-- **Cliente**: Nombres, apellidos, documento único opcional, teléfono, email, observación
-- **Reserva**: Cliente, mesa, fecha/hora, cantidad de personas, duración, estado (Pendiente, Confirmada, Atendida, Cancelada, No asistió), validación de capacidad, conflictos de horario y mesa activa
-
-### reportes
-- Vistas para reportes de ventas (sin modelos propios, consulta modelos de otros módulos)
-
-### core
-- Vista principal/dashboard (sin modelos propios)
-
-## Estructura principal de carpetas
-
-```
-sistema-restaurante/
-├── config/                 # Configuración central del proyecto Django
-│   ├── settings.py         # Configuración principal (BD, apps, middleware, etc.)
-│   ├── urls.py             # URLs raíz
-│   ├── wsgi.py             # Entrada WSGI
-│   └── asgi.py             # Entrada ASGI
-├── catalogo/               # Catálogo de productos y categorías
-├── mesas/                  # Gestión de mesas
-├── pedidos/                # Pedidos y detalles
-├── cocina/                 # Panel de cocina
-├── sala/                   # Panel de sala/meseros
-├── caja/                   # Pagos y cierre de caja
-├── inventario/             # Inventario, ingredientes, recetas, movimientos
-├── compras/                # Proveedores y compras
-├── personal/               # Perfiles de empleado y permisos por rol
-├── reservas/               # Clientes y reservas
-├── reportes/               # Reportes y análisis
-├── core/                   # Vista principal / dashboard
-├── templates/              # Plantillas base y por app
-│   ├── registration/       # Login, logout (auth)
-│   ├── catalogo/
-│   ├── mesas/
-│   ├── pedidos/
-│   ├── cocina/
-│   ├── sala/
-│   ├── caja/
-│   ├── inventario/
-│   ├── compras/
-│   ├── personal/
-│   ├── reservas/
-│   └── reportes/
-├── static/                 # Archivos estáticos (CSS, JS, imágenes)
-├── manage.py               # Script de gestión de Django
-├── .env                    # Variables de entorno (NO versionar)
-├── .gitignore              # Archivos ignorados por Git
-└── venv/                   # Entorno virtual (NO versionar)
-```
-
-## Base de datos
-
-- **Motor**: PostgreSQL (configurado en `config/settings.py` con `django.db.backends.postgresql`)
-- **Conexión**: Variables de entorno `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`
-- **Migraciones**: Cada app con modelos tiene su carpeta `migrations/`
-- **Zona horaria**: `America/Lima` (configurado en `TIME_ZONE`)
-- **Idioma**: Español (`LANGUAGE_CODE = 'es'`)
-
-## Usuarios, roles y permisos
-
-El sistema extiende el usuario de Django (`AbstractUser`) mediante `personal.models.PerfilEmpleado` con 4 roles:
-
-| Rol | Descripción | Acceso típico |
-|-----|-------------|---------------|
-| **Administrador** | Acceso total al sistema | Admin de Django, todos los módulos, reportes, gestión de usuarios |
-| **Mesero** | Atención en sala | Mesas, pedidos, sala, reservas |
-| **Cocina** | Preparación de pedidos | Cocina, pedidos (cambio de estado) |
-| **Cajero** | Cobro y caja | Caja, pedidos (ver para cobrar), reportes de ventas |
-
-El control de permisos se implementa en `personal/permisos.py` y se inyecta en templates via context processor `personal.context_processors.permisos`.
-
-Autenticación: Usa vistas estándar de Django (`django.contrib.auth.urls`) bajo `/cuentas/`.
-
-## Desarrollo y pruebas
-
-### Ejecutar tests
-
-```bash
-# Todos los tests
+```powershell
 python manage.py test
-
-# Tests de una app específica
-python manage.py test pedidos
-python manage.py test personal.tests_permisos
 ```
 
-Apps con tests:
-- `catalogo/tests.py`
-- `mesas/tests.py`
-- `pedidos/tests.py`
-- `cocina/tests.py`
-- `sala/tests.py`
-- `caja/tests.py`
-- `inventario/tests.py`
-- `compras/tests.py`
-- `personal/tests.py` y `personal/tests_permisos.py`
-- `reservas/tests.py`
-- `reportes/tests.py`
-- `core/tests.py`
+Se usa una base temporal separada, que Django elimina al terminar. La cuenta de PostgreSQL usada para pruebas debe poder crear bases. Las pruebas de concurrencia requieren PostgreSQL y se omiten en SQLite.
 
-### Comandos útiles
+Para comprobar el JavaScript, con Node.js instalado:
 
-```bash
-# Crear migraciones tras cambios en modelos
-python manage.py makemigrations
-
-# Ver migraciones pendientes
-python manage.py showmigrations
-
-# Shell interactivo
-python manage.py shell
-
-# Recolectar estáticos (producción)
-python manage.py collectstatic
+```powershell
+node --test tests_js/panel-live.test.cjs tests_js/formset.test.cjs
 ```
 
-## Notas importantes para ejecutar en otra computadora
+La suite cubre permisos, formularios, operaciones simultáneas y el recorrido completo de crear, preparar, entregar y cobrar un pedido. La comprobación responsive realizada incluye cocina a 1366, 768 y 390 píxeles y la apertura del menú móvil; no sustituye una revisión de accesibilidad de todo el producto.
 
-1. **Base de datos**: Debe tener PostgreSQL instalado y accesible. Cree la base de datos y usuario antes de migrar.
-2. **Variables de entorno**: El archivo `.env` **no se versiona**. Cada entorno necesita su propio `.env` con credenciales válidas.
-3. **SECRET_KEY**: Genere una nueva clave secreta para producción (`django-insecure-` + string aleatoria).
-4. **DEBUG**: En producción **siempre** `DEBUG=False`. `ALLOWED_HOSTS` se configura via variable de entorno `ALLOWED_HOSTS` (default: `localhost,127.0.0.1`).
-5. **Zona horaria**: El proyecto usa `America/Lima`. Ajuste en `settings.py` si está en otra zona.
-6. **Archivos estáticos**: En producción ejecute `collectstatic` y configure su servidor web (Nginx/Apache) para servirlos.
-7. **Permisos de archivos**: Asegúrese de que el usuario que ejecuta la app tenga permisos de escritura en la carpeta del proyecto (para logs, media si se usa, etc.).
-8. **Dependencias**: Instale con `pip install -r requirements.txt`.
-9. **Puerto por defecto**: `runserver` usa el 8000. Cambie con `python manage.py runserver 0.0.0.0:8000` para acceso en red local.
+## Estructura
 
-## Licencia
+```text
+config/       Configuración, rutas y entorno de demostración
+core/         Panel, filtros, fechas, paginación y carga de demo
+pedidos/      Pedidos, detalles y reglas de edición
+cocina/ sala/  Preparación y entrega
+caja/         Cobros y cierres diarios
+inventario/   Ingredientes, recetas y movimientos
+compras/      Proveedores, órdenes y recepción
+personal/     Usuarios, roles y permisos
+reservas/     Clientes y horarios
+reportes/     Ventas y exportación CSV
+templates/    Pantallas del sistema
+static/       CSS, JavaScript e imágenes
+docs/         Capturas y guion de demostración
+```
 
-Uso interno / privado. No se especifica licencia en el proyecto.
+## Alcance
 
----
+Proyecto de portafolio con ejecución local. Todavía no integra facturación electrónica, pasarelas de pago, devoluciones ni un flujo completo de mermas. Registrar un pago no ejecuta una transacción bancaria. Un despliegue público requiere configuración de producción, servidor de aplicación, estáticos y copias de seguridad; no se debe publicar con `runserver` ni con las claves de demostración.
 
-**Desarrollado con Django 6.0.8** | Sistema de gestión para restaurantes
+No se ha añadido una licencia de distribución. El archivo `.env`, las bases de datos y las credenciales reales no deben subirse al repositorio.

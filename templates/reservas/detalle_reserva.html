@@ -11,6 +11,9 @@
     </div>
 </div>
 
+{% if reserva.vencida %}
+<p class="message message-warning">El horario de esta reserva ya terminó. Revisa si fue atendida, cancelada o si el cliente no asistió.</p>
+{% endif %}
 <div class="detalle-info">
     <div class="info-item"><span class="info-label">Cliente:</span> {{ reserva.cliente.nombres }} {{ reserva.cliente.apellidos }}</div>
     <div class="info-item"><span class="info-label">Teléfono:</span> {{ reserva.cliente.telefono }}</div>
@@ -60,7 +63,12 @@
         </div>
     </section>
 {% elif reserva.estado == 'ATENDIDA' %}
-    <p class="help-text">Esta reserva fue atendida.</p>
+    <p class="help-text">Esta reserva fue atendida. Registra los productos para comenzar el pedido.</p>
+    {% if reserva.mesa.activo and reserva.mesa.estado == 'LIBRE' %}
+        <a class="btn btn-primary" href="{% url 'crear_pedido' %}?mesa={{ reserva.mesa_id }}">Crear pedido en esta mesa</a>
+    {% else %}
+        <a class="btn btn-secondary" href="{% url 'lista_mesas' %}">Ver estado de la mesa</a>
+    {% endif %}
 {% elif reserva.estado == 'NO_ASISTIO' %}
     <p class="help-text">El cliente no asistió a esta reserva.</p>
 {% elif reserva.estado == 'CANCELADA' %}

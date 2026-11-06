@@ -46,7 +46,7 @@
                         <td>{{ reserva.cliente.nombres }} {{ reserva.cliente.apellidos }}</td>
                         <td>Mesa {{ reserva.mesa.numero }}</td>
                         <td>{{ reserva.cantidad_personas }}</td>
-                        <td><span class="estado-badge estado-reserva-{{ reserva.estado|lower }}">{{ reserva.get_estado_display }}</span></td>
+                        <td><span class="estado-badge estado-reserva-{{ reserva.estado|lower }}">{{ reserva.get_estado_display }}</span>{% if reserva.vencida %} <span class="help-text">Horario vencido</span>{% endif %}</td>
                         <td>{{ reserva.usuario.get_full_name|default:reserva.usuario.username }}</td>
                         <td>
                             <a href="{% url 'detalle_reserva' reserva.pk %}" class="btn btn-secondary btn-small">Ver</a>
@@ -62,4 +62,5 @@
 {% else %}
     <p class="empty">No se encontraron reservas con los filtros aplicados.</p>
 {% endif %}
+{% include "componentes/paginacion.html" with pagina=reservas %}
 {% endblock %}

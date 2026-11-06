@@ -68,6 +68,6 @@ def recibir_compra(compra_id, usuario):
 
         compra.estado = Compra.Estado.RECIBIDA
         compra.fecha_recepcion = timezone.now()
-        compra.save()
+        compra.save(_desde_recepcion=True)
 
         return compra

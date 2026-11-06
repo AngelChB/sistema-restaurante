@@ -57,6 +57,18 @@ class Pedido(models.Model):
         self.validate()
 
     def validate(self):
+        from caja.models import Pago
+        pago = Pago.objects.filter(pedido_id=self.pk).first() if self.pk else None
+        if self.estado == self.Estado.PAGADO and (
+            pago is None or pago.monto != self.total
+        ):
+            raise ValidationError('Un pedido solo puede figurar pagado con un cobro válido por su total.')
+        if pago is not None and self.estado != self.Estado.PAGADO:
+            raise ValidationError('Un pedido con un cobro registrado debe conservar el estado pagado.')
+        if self.pk and self.estado == self.Estado.ABIERTO:
+            anterior = Pedido.objects.get(pk=self.pk)
+            if anterior.estado != self.Estado.ABIERTO:
+                raise ValidationError('Un pedido que ya salió de abierto no puede reabrirse para editar sus productos.')
         if self.estado not in self.ESTADOS_ACTIVOS:
             return
         if not self.mesa.activo:
@@ -91,10 +103,17 @@ class Pedido(models.Model):
         with transaction.atomic():
             mesa_anterior_id = None
             if self.pk:
-                mesa_anterior_id = Pedido.objects.values_list(
+                mesa_anterior_id = Pedido.objects.select_for_update().values_list(
                     'mesa_id', flat=True
                 ).get(pk=self.pk)
 
+            mesas_ids = {self.mesa_id}
+            if mesa_anterior_id:
+                mesas_ids.add(mesa_anterior_id)
+            mesas = {m.pk: m for m in Mesa.objects.select_for_update().filter(
+                pk__in=mesas_ids
+            ).order_by('pk')}
+            self.mesa = mesas[self.mesa_id]
             self.validate()
             super().save(*args, **kwargs)
 
@@ -163,7 +182,30 @@ class DetallePedido(models.Model):
     def subtotal(self):
         return self.cantidad * self.precio_unitario
 
+    def _validar_detalles_editables(self):
+        pedidos_ids = {self.pedido_id}
+        if self.pk:
+            pedidos_ids.add(
+                DetallePedido.objects.values_list('pedido_id', flat=True).get(pk=self.pk)
+            )
+        pedidos = list(Pedido.objects.select_for_update().filter(
+            pk__in=pedidos_ids
+        ).order_by('pk'))
+        if any(p.estado != Pedido.Estado.ABIERTO or hasattr(p, 'pago')
+               for p in pedidos):
+            raise ValidationError('Solo se pueden cambiar productos y cantidades mientras el pedido está abierto.')
+
     def save(self, *args, **kwargs):
+        with transaction.atomic():
+            self._validar_detalles_editables()
+            self._guardar_detalle(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        with transaction.atomic():
+            self._validar_detalles_editables()
+            return super().delete(*args, **kwargs)
+
+    def _guardar_detalle(self, *args, **kwargs):
         if self._state.adding:
             if not self.producto.disponible:
                 raise ValidationError(

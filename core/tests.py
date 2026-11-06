@@ -79,9 +79,11 @@ class DashboardTests(TestCase):
             categoria=categoria, nombre='Agua', precio=Decimal('10.00')
         )
         pedido = Pedido.objects.create(
-            mesa=mesa, mesero=mesero, estado=Pedido.Estado.ENTREGADO
+            mesa=mesa, mesero=mesero, estado=Pedido.Estado.ABIERTO
         )
         DetallePedido.objects.create(pedido=pedido, producto=producto, cantidad=2)
+        pedido.estado = Pedido.Estado.ENTREGADO
+        pedido.save()
         if monto is None:
             monto = pedido.total
         return Pago.objects.create(

@@ -93,4 +93,5 @@
 {% else %}
     <p class="empty">No se encontraron empleados con los filtros aplicados.</p>
 {% endif %}
+{% include "componentes/paginacion.html" with pagina=usuarios %}
 {% endblock %}

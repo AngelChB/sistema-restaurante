@@ -1,5 +1,5 @@
 import csv
-from datetime import datetime, time as dt_time
+from core.fechas import parsear_fecha, limites_fechas
 from decimal import Decimal
 
 from django.contrib import messages
@@ -35,21 +35,12 @@ COLUMNAS_CSV = [
 ]
 
 
-def _parsear_fecha(texto):
-    if not texto:
-        return None
-    try:
-        return datetime.strptime(texto, '%Y-%m-%d').date()
-    except (TypeError, ValueError):
-        return None
-
-
 def _rango_fechas(request):
     hoy = timezone.localdate()
     texto_desde = request.GET.get('fecha_desde')
     texto_hasta = request.GET.get('fecha_hasta')
-    fecha_desde = _parsear_fecha(texto_desde)
-    fecha_hasta = _parsear_fecha(texto_hasta)
+    fecha_desde = parsear_fecha(texto_desde)
+    fecha_hasta = parsear_fecha(texto_hasta)
 
     if (texto_desde or texto_hasta) and (
         fecha_desde is None or fecha_hasta is None
@@ -79,15 +70,8 @@ def _rango_fechas(request):
     return fecha_desde, fecha_hasta
 
 
-def _extremos_naive(fecha_desde, fecha_hasta):
-    zona = timezone.get_current_timezone()
-    inicio = datetime.combine(fecha_desde, dt_time.min, tzinfo=zona)
-    fin = datetime.combine(fecha_hasta, dt_time.max, tzinfo=zona)
-    return inicio, fin
-
-
 def _consultar_pagos(fecha_desde, fecha_hasta):
-    inicio, fin = _extremos_naive(fecha_desde, fecha_hasta)
+    inicio, fin = limites_fechas(fecha_desde, fecha_hasta)
     return Pago.objects.filter(
         fecha_pago__range=(inicio, fin),
     ).select_related('pedido', 'pedido__mesa', 'pedido__mesero', 'cajero')
@@ -138,7 +122,7 @@ def _ventas_por_dia(pagos):
 @rol_requerido(*ROLES_REPORTES)
 def reporte_ventas(request):
     fecha_desde, fecha_hasta = _rango_fechas(request)
-    inicio, fin = _extremos_naive(fecha_desde, fecha_hasta)
+    inicio, fin = limites_fechas(fecha_desde, fecha_hasta)
     pagos = _consultar_pagos(fecha_desde, fecha_hasta)
 
     totales = pagos.aggregate(
@@ -172,6 +156,14 @@ def reporte_ventas(request):
     })
 
 
+def _texto_csv(valor):
+    """Exporta texto editable como texto, incluso al abrirlo en una hoja de cálculo."""
+    texto = str(valor)
+    if texto.startswith(('\t', '\r', '\n')) or texto.lstrip().startswith(('=', '+', '-', '@')):
+        return "'" + texto
+    return texto
+
+
 @rol_requerido(*ROLES_REPORTES)
 def exportar_ventas_csv(request):
     fecha_desde, fecha_hasta = _rango_fechas(request)
@@ -189,16 +181,16 @@ def exportar_ventas_csv(request):
     for pago in pagos:
         escritor.writerow([
             pago.id,
-            pago.fecha_pago.strftime('%d/%m/%Y %H:%M'),
+            timezone.localtime(pago.fecha_pago).strftime('%d/%m/%Y %H:%M'),
             pago.pedido_id,
             pago.pedido.mesa.numero,
-            pago.pedido.mesero.get_full_name() or pago.pedido.mesero.username,
-            pago.cajero.get_full_name() or pago.cajero.username,
+            _texto_csv(pago.pedido.mesero.get_full_name() or pago.pedido.mesero.username),
+            _texto_csv(pago.cajero.get_full_name() or pago.cajero.username),
             pago.get_metodo_display(),
             f'{pago.monto:.2f}',
             f'{pago.monto_recibido:.2f}' if pago.monto_recibido is not None else '',
             f'{pago.vuelto:.2f}',
-            pago.referencia,
+            _texto_csv(pago.referencia),
         ])
 
     return respuesta

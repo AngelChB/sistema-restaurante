@@ -63,4 +63,5 @@
 {% else %}
     <p class="empty">No se encontraron clientes con los filtros aplicados.</p>
 {% endif %}
+{% include "componentes/paginacion.html" with pagina=clientes %}
 {% endblock %}

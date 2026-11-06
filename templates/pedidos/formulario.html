@@ -9,7 +9,7 @@
 </div>
 
 <div class="form-card form-card-wide">
-    <form method="post" id="pedido-form" novalidate>
+    <form method="post" id="pedido-form" data-formset novalidate>
         {% csrf_token %}
 
         {% if form.non_field_errors %}
@@ -115,5 +115,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{% static 'js/pedidos.js' %}"></script>
+<script src="{% static 'js/formset.js' %}"></script>
 {% endblock %}

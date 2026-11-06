@@ -1,8 +1,12 @@
 (function () {
-    var formset = document.getElementById('detalle-formset');
+    var formulario = document.querySelector('form[data-formset]');
+    if (!formulario) return;
+    var formset = formulario.querySelector('#detalle-formset');
     var filaVacia = document.getElementById('fila-vacia');
     var agregarBtn = document.getElementById('agregar-fila');
-    var totalForms = document.querySelector('[name$="-TOTAL_FORMS"]');
+    var totalForms = formulario.querySelector('[name$="-TOTAL_FORMS"]');
+    if (!formset || !filaVacia || !totalForms) return;
+    var hayCambios = false;
     var prefix = totalForms ? totalForms.name.replace('-TOTAL_FORMS', '') : 'detalles';
 
     function reindexar() {
@@ -46,11 +50,13 @@
                 label.setAttribute('for', forAttr.replace(/__prefix__/g, index));
             }
         });
+        hayCambios = true;
         formset.appendChild(fila);
         reindexar();
     }
 
     function eliminarFila(fila) {
+        hayCambios = true;
         var idInput = fila.querySelector('input[name$="-id"]');
         var esNueva = !idInput || idInput.value === '';
         if (esNueva) {
@@ -78,8 +84,6 @@
         });
     }
 
-    var formulario = document.getElementById('compra-form');
-    var hayCambios = false;
     if (formulario) {
         formulario.addEventListener('input', function () {
             hayCambios = true;

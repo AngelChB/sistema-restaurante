@@ -1,3 +1,5 @@
+from caja.models import Pago
+from pedidos.models import DetallePedido
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -42,9 +44,16 @@ class SalaViewsTests(TestCase):
         self.mesa4 = Mesa.objects.create(numero=4, capacidad=2)
 
     def _crear_pedido(self, mesero, mesa, estado):
-        return Pedido.objects.create(
-            mesa=mesa, mesero=mesero, estado=estado
-        )
+        if estado != Pedido.Estado.PAGADO:
+            return Pedido.objects.create(mesa=mesa, mesero=mesero, estado=estado)
+        pedido = Pedido.objects.create(mesa=mesa, mesero=mesero)
+        DetallePedido.objects.create(pedido=pedido, producto=self.producto, cantidad=1)
+        pedido.estado = Pedido.Estado.ENTREGADO
+        pedido.save()
+        Pago.objects.create(pedido=pedido, cajero=mesero, metodo='EFECTIVO',
+                            monto=pedido.total, monto_recibido=pedido.total)
+        pedido.refresh_from_db()
+        return pedido
 
     def test_visitante_no_autenticado_es_redirigido_al_login(self):
         response = self.client.get(reverse('panel_sala'))

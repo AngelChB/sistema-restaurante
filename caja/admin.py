@@ -22,7 +22,7 @@ class PagoAdmin(admin.ModelAdmin):
     def get_readonly_fields(self, request, obj=None):
         readonly = list(self.readonly_fields)
         if obj:
-            readonly.extend(['monto', 'vuelto'])
+            readonly.extend(['metodo', 'monto', 'monto_recibido', 'vuelto'])
         return readonly
 
     def has_delete_permission(self, request, obj=None):

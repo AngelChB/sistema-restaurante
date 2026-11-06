@@ -85,6 +85,7 @@
     {% else %}
         <p class="empty">No hay pedidos pendientes de pago.</p>
     {% endif %}
+    {% include "componentes/paginacion.html" with pagina=pendientes etiqueta="Páginas de pedidos pendientes" %}
 </section>
 
 <section class="section">
@@ -125,5 +126,6 @@
     {% else %}
         <p class="empty">Aún no hay pagos registrados hoy.</p>
     {% endif %}
+{% include "componentes/paginacion.html" with pagina=pagos etiqueta="Páginas de pagos" %}
 </section>
 {% endblock %}

@@ -57,7 +57,7 @@
                     {% elif item.reserva %}
                         <div class="mesa-dato mesa-dato-reserva">
                             <span class="mesa-dato-label">{{ item.reserva.cliente.nombres }} {{ item.reserva.cliente.apellidos }}</span>
-                            <span class="mesa-dato-total">{{ item.reserva.cantidad_personas }} personas · {{ item.reserva.fecha_hora|date:'g:i a' }}</span>
+                            <span class="mesa-dato-total">{{ item.reserva.cantidad_personas }} personas · {{ item.reserva.fecha_hora|date:'d/m H:i' }}</span>
                         </div>
                     {% else %}
                         <span class="mesa-disponible">{% if item.mesa.estado == 'FUERA_SERVICIO' %}No disponible{% else %}Lista para recibir comensales{% endif %}</span>
@@ -65,7 +65,7 @@
                 </div>
 
                 <div class="mesa-card-footer">
-                    {% if item.mesa.estado == 'LIBRE' %}
+                    {% if item.mesa.activo and item.mesa.estado == 'LIBRE' %}
                         <a href="{% url 'crear_pedido' %}?mesa={{ item.mesa.pk }}" class="btn btn-primary mesa-accion">Nuevo pedido</a>
                     {% elif item.mesa.estado == 'OCUPADA' and item.pedido %}
                         <a href="{% url 'detalle_pedido' item.pedido.pk %}" class="btn btn-primary mesa-accion">Ver pedido</a>

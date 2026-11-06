@@ -1,3 +1,4 @@
+from core.paginacion import paginar
 from decimal import Decimal
 
 from django.contrib import messages
@@ -42,11 +43,11 @@ def panel_caja(request):
     return render(request, 'caja/panel.html', {
         'hoy': hoy,
         'cierre_del_dia': cierre_del_dia,
-        'pagos': pagos,
+        'pagos': paginar(request, pagos, 'pagina_pagos'),
         'total_dia': total_dia,
         'cantidad_pagos': pagos.count(),
         'totales_por_metodo': totales_por_metodo,
-        'pendientes': pendientes,
+        'pendientes': paginar(request, pendientes, 'pagina_pendientes'),
     })
 
 

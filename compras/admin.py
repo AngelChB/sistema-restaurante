@@ -21,6 +21,18 @@ class DetalleCompraInline(admin.TabularInline):
     extra = 1
     autocomplete_fields = ('ingrediente',)
 
+    def _editable(self, obj):
+        return obj is None or obj.estado == Compra.Estado.BORRADOR
+
+    def has_add_permission(self, request, obj=None):
+        return self._editable(obj) and super().has_add_permission(request, obj)
+
+    def has_change_permission(self, request, obj=None):
+        return self._editable(obj) and super().has_change_permission(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        return self._editable(obj) and super().has_delete_permission(request, obj)
+
 
 @admin.register(Compra)
 class CompraAdmin(admin.ModelAdmin):
@@ -43,7 +55,7 @@ class CompraAdmin(admin.ModelAdmin):
     def get_readonly_fields(self, request, obj=None):
         if obj is not None and obj.estado != Compra.Estado.BORRADOR:
             return [f.name for f in self.model._meta.fields]
-        return ['usuario', 'fecha_recepcion']
+        return ['usuario', 'fecha_recepcion', 'estado']
 
     def has_change_permission(self, request, obj=None):
         if obj is not None and obj.estado != Compra.Estado.BORRADOR:
@@ -51,9 +63,8 @@ class CompraAdmin(admin.ModelAdmin):
         return super().has_change_permission(request, obj)
 
     def has_delete_permission(self, request, obj=None):
-        if obj is not None and obj.estado != Compra.Estado.BORRADOR:
-            return False
-        return super().has_delete_permission(request, obj)
+        # La eliminación masiva de Django omite Model.delete().
+        return False
 
     def save_model(self, request, obj, form, change):
         if not change:
@@ -75,3 +86,13 @@ class DetalleCompraAdmin(admin.ModelAdmin):
         'ingrediente__nombre',
     )
     autocomplete_fields = ('ingrediente',)
+
+    def has_add_permission(self, request):
+        # Los detalles se gestionan en el formulario de la compra.
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

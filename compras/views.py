@@ -1,3 +1,5 @@
+from core.paginacion import paginar
+from core.filtros import filtro_id, filtro_fecha
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -77,7 +79,7 @@ def editar_proveedor(request, pk):
 @rol_requerido(*ROLES_COMPRAS_VER)
 def lista_compras(request):
     estado = request.GET.get('estado', '')
-    proveedor_id = request.GET.get('proveedor', '')
+    proveedor_id = filtro_id(request, 'proveedor')
     buscar = request.GET.get('buscar', '').strip()
 
     compras = Compra.objects.select_related('proveedor', 'usuario').prefetch_related(
@@ -97,7 +99,7 @@ def lista_compras(request):
     proveedores = Proveedor.objects.filter(activo=True).order_by('razon_social')
 
     return render(request, 'compras/lista_compras.html', {
-        'compras': compras,
+        'compras': paginar(request, compras),
         'proveedores': proveedores,
         'estado': estado,
         'proveedor_id': proveedor_id,

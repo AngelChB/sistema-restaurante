@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
@@ -40,8 +41,9 @@ def panel_cocina(request):
 
 @rol_requerido(PerfilEmpleado.Rol.ADMINISTRADOR, PerfilEmpleado.Rol.COCINA)
 @require_POST
+@transaction.atomic
 def actualizar_estado_cocina(request, pk):
-    pedido = get_object_or_404(Pedido, pk=pk)
+    pedido = get_object_or_404(Pedido.objects.select_for_update(), pk=pk)
     siguiente = TRANSICIONES.get(pedido.estado)
     if siguiente is None:
         messages.error(

@@ -63,6 +63,7 @@
 {% else %}
     <p class="empty">No se encontraron pedidos con los filtros aplicados.</p>
 {% endif %}
+{% include "componentes/paginacion.html" with pagina=pedidos %}
 {% endblock %}
 
 {% block scripts %}

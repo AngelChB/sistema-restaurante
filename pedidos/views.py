@@ -1,3 +1,4 @@
+from core.paginacion import paginar
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
@@ -5,6 +6,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from inventario.services import iniciar_preparacion_con_descuento
 from mesas.models import Mesa
 from personal.models import PerfilEmpleado
 from personal.permisos import rol_requerido, tiene_roles
@@ -43,7 +45,7 @@ def lista_pedidos(request):
             pedidos = pedidos.filter(mesa__numero__icontains=buscar)
 
     return render(request, 'pedidos/lista.html', {
-        'pedidos': pedidos,
+        'pedidos': paginar(request, pedidos),
         'estado': estado,
         'buscar': buscar,
         'estados': Pedido.Estado.choices,
@@ -110,8 +112,9 @@ def detalle_pedido(request, pk):
 
 @rol_requerido(*ROLES_PEDIDOS)
 @require_POST
+@transaction.atomic
 def cambiar_estado_pedido(request, pk):
-    pedido = get_object_or_404(Pedido, pk=pk)
+    pedido = get_object_or_404(Pedido.objects.select_for_update(), pk=pk)
     if (
         not tiene_roles(request.user, [PerfilEmpleado.Rol.ADMINISTRADOR])
         and pedido.mesero != request.user
@@ -124,9 +127,12 @@ def cambiar_estado_pedido(request, pk):
             'No se puede cambiar el pedido a ese estado.',
         )
         return redirect('detalle_pedido', pk=pedido.pk)
-    pedido.estado = nuevo_estado
     try:
-        pedido.save()
+        if nuevo_estado == Pedido.Estado.EN_PREPARACION:
+            iniciar_preparacion_con_descuento(pedido.pk, request.user)
+        else:
+            pedido.estado = nuevo_estado
+            pedido.save()
     except ValidationError as error:
         mensaje = error.messages[0] if error.messages else 'No se pudo cambiar el estado.'
         messages.error(request, mensaje)

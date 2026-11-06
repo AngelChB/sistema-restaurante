@@ -2,7 +2,8 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
+from django.utils import timezone
 
 from mesas.models import Mesa
 
@@ -117,6 +118,10 @@ class Reserva(models.Model):
     def fin(self):
         return self.fecha_hora + timedelta(minutes=self.duracion_minutos)
 
+    @property
+    def vencida(self):
+        return self.estado in self.ESTADOS_ACTIVOS and self.fin <= timezone.now()
+
     def clean(self):
         self.validate()
 
@@ -138,7 +143,7 @@ class Reserva(models.Model):
                     errores['fecha_hora'] = (
                         'La fecha y hora de la reserva debe ser futura.'
                     )
-            if self.mesa_id:
+            if self.mesa_id and self.estado in self.ESTADOS_ACTIVOS:
                 if not self.mesa.activo:
                     errores['mesa'] = (
                         'No se puede reservar una mesa inactiva.'
@@ -183,5 +188,15 @@ class Reserva(models.Model):
         return False
 
     def save(self, *args, **kwargs):
-        self.validate()
-        super().save(*args, **kwargs)
+        with transaction.atomic():
+            mesas_ids = {self.mesa_id}
+            if self.pk:
+                anterior = Reserva.objects.select_for_update().get(pk=self.pk)
+                mesas_ids.add(anterior.mesa_id)
+            # Una fila de mesa existe incluso cuando todavía no hay reservas.
+            mesas = {m.pk: m for m in Mesa.objects.select_for_update().filter(
+                pk__in=mesas_ids
+            ).order_by('pk')}
+            self.mesa = mesas[self.mesa_id]
+            self.validate()
+            super().save(*args, **kwargs)

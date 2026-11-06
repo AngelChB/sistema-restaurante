@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
@@ -26,8 +27,9 @@ def panel_sala(request):
 
 @rol_requerido(PerfilEmpleado.Rol.ADMINISTRADOR, PerfilEmpleado.Rol.MESERO)
 @require_POST
+@transaction.atomic
 def marcar_pedido_entregado(request, pk):
-    pedido = get_object_or_404(Pedido, pk=pk)
+    pedido = get_object_or_404(Pedido.objects.select_for_update(), pk=pk)
     if (
         not tiene_roles(request.user, [PerfilEmpleado.Rol.ADMINISTRADOR])
         and pedido.mesero != request.user

@@ -104,7 +104,7 @@
                             <td>{{ movimiento.cantidad|floatformat:"3u" }}</td>
                             <td>{{ movimiento.stock_anterior|floatformat:"3u" }}</td>
                             <td>{{ movimiento.stock_resultante|floatformat:"3u" }}</td>
-                            <td>{{ movimiento.usuario.get_full_name|default:movimiento.usuario.username }}</td>
+                            <td>{% if movimiento.usuario %}{{ movimiento.usuario.get_full_name|default:movimiento.usuario.username }}{% else %}Sin usuario{% endif %}</td>
                         </tr>
                     {% endfor %}
                 </tbody>

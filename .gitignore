@@ -33,3 +33,5 @@ ehthumbs.db
 local_settings.py
 .env.local
 .env.*.local
+# Ejemplo público sin credenciales reales
+!.env.example

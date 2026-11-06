@@ -71,13 +71,15 @@ class ReporteVentasTests(TestCase):
         pedido = Pedido.objects.create(
             mesa=self.mesa,
             mesero=mesero or self.mesero,
-            estado=Pedido.Estado.ENTREGADO,
+            estado=Pedido.Estado.ABIERTO,
         )
         DetallePedido.objects.create(
             pedido=pedido,
             producto=producto or self.producto1,
             cantidad=cantidad,
         )
+        pedido.estado = Pedido.Estado.ENTREGADO
+        pedido.save()
         if metodo == Pago.Metodo.EFECTIVO and monto_recibido is None:
             monto_recibido = pedido.total
         pago = Pago.objects.create(

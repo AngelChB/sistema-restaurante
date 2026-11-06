@@ -1,4 +1,4 @@
-from datetime import datetime, time as dt_time
+from core.fechas import limites_fechas
 from decimal import Decimal
 
 from django.conf import settings
@@ -9,6 +9,7 @@ from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from pedidos.models import Pedido
+from .bloqueos import bloquear_jornada
 
 
 class Pago(models.Model):
@@ -58,14 +59,23 @@ class Pago(models.Model):
         if self.pedido_id is None:
             return
         if self.pk:
-            pedido_original = Pago.objects.get(pk=self.pk).pedido
-            if pedido_original_id != self.pedido_id:
+            original = Pago.objects.get(pk=self.pk)
+            campos_cobro = (
+                'pedido_id', 'cajero_id', 'metodo', 'monto',
+                'monto_recibido', 'vuelto',
+            )
+            if any(getattr(original, campo) != getattr(self, campo)
+                   for campo in campos_cobro):
                 raise ValidationError(
-                    'No se puede cambiar el pedido de un pago ya guardado.'
+                    'No se pueden modificar los datos de un cobro registrado.'
                 )
-        if self.pedido.estado != Pedido.Estado.ENTREGADO:
+        estado_esperado = (
+            Pedido.Estado.PAGADO if self.pk else Pedido.Estado.ENTREGADO
+        )
+        if self.pedido.estado != estado_esperado:
             raise ValidationError(
-                'Solo se pueden registrar pagos para pedidos entregados.'
+                'Solo se pueden registrar pagos para pedidos entregados; '
+                'los pagos existentes deben conservar su pedido pagado.'
             )
         if self.pedido.total != self.monto:
             raise ValidationError(
@@ -91,6 +101,10 @@ class Pago(models.Model):
 
     def save(self, *args, **kwargs):
         with transaction.atomic():
+            bloquear_jornada(timezone.localdate())
+            self.pedido = Pedido.objects.select_for_update().get(
+                pk=self.pedido_id
+            )
             self.clean()
             if self.metodo == self.Metodo.EFECTIVO:
                 self.vuelto = self.monto_recibido - self.monto
@@ -151,14 +165,8 @@ class CierreCaja(models.Model):
     def __str__(self):
         return f'Cierre de caja - {self.fecha_operacion}'
 
-    def _limites_fecha(self):
-        zona = timezone.get_current_timezone()
-        inicio = datetime.combine(self.fecha_operacion, dt_time.min, tzinfo=zona)
-        fin = datetime.combine(self.fecha_operacion, dt_time.max, tzinfo=zona)
-        return inicio, fin
-
     def _pagos_de_la_fecha(self):
-        inicio, fin = self._limites_fecha()
+        inicio, fin = limites_fechas(self.fecha_operacion, self.fecha_operacion)
         return Pago.objects.filter(fecha_pago__range=(inicio, fin))
 
     def pagos_del_dia(self):
@@ -178,6 +186,11 @@ class CierreCaja(models.Model):
 
     def save(self, *args, **kwargs):
         with transaction.atomic():
+            bloquear_jornada(self.fecha_operacion)
+            if self.pk is None and CierreCaja.objects.filter(
+                fecha_operacion=self.fecha_operacion
+            ).exists():
+                raise ValidationError('La caja de esta fecha ya fue cerrada.')
             if self.pk is None:
                 pagos = self._pagos_de_la_fecha()
                 totales = pagos.aggregate(

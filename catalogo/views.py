@@ -1,3 +1,4 @@
+from core.filtros import filtro_id, filtro_fecha
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -18,7 +19,7 @@ ROL_CATALOGO = [
 @rol_requerido(*ROL_CATALOGO)
 def lista_productos(request):
     buscar = request.GET.get('buscar', '').strip()
-    categoria_id = request.GET.get('categoria', '')
+    categoria_id = filtro_id(request, 'categoria')
     disponible = request.GET.get('disponible', '')
 
     productos = Producto.objects.select_related('categoria').all()

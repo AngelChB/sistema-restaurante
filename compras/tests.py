@@ -180,10 +180,13 @@ class RecibirCompraTests(TestCase):
         compra = Compra.objects.create(
             proveedor=self.proveedor,
             usuario=self.usuario,
-            estado=estado,
+            estado=Compra.Estado.BORRADOR,
             numero_documento='F001-000001',
             fecha_documento=date.today(),
         )
+        if estado != Compra.Estado.BORRADOR:
+            compra.estado = estado
+            compra.save()
         return compra
 
     def _agregar_detalle(self, compra, ingrediente, cantidad, costo):
@@ -273,10 +276,12 @@ class RecibirCompraTests(TestCase):
         )
 
     def test_una_compra_cancelada_no_puede_recibirse(self):
-        compra = self._crear_compra(estado=Compra.Estado.CANCELADA)
+        compra = self._crear_compra()
         self._agregar_detalle(
             compra, self.harina, Decimal('50'), Decimal('5.0000')
         )
+        compra.estado = Compra.Estado.CANCELADA
+        compra.save()
         with self.assertRaises(ValidationError):
             recibir_compra(compra.pk, self.usuario)
         compra.refresh_from_db()
@@ -361,7 +366,7 @@ class ComprasViewsTests(TestCase):
         compra = Compra.objects.create(
             proveedor=self.proveedor,
             usuario=self.administrador,
-            estado=estado,
+            estado=Compra.Estado.BORRADOR,
             numero_documento='F001-000001',
             fecha_documento=date.today(),
         )
@@ -371,6 +376,11 @@ class ComprasViewsTests(TestCase):
             cantidad=Decimal('50'),
             costo_unitario=Decimal('5.0000'),
         )
+        if estado == Compra.Estado.RECIBIDA:
+            compra = recibir_compra(compra.pk, self.administrador)
+        elif estado == Compra.Estado.CANCELADA:
+            compra.estado = estado
+            compra.save()
         return compra
 
     def test_visitante_no_autenticado_es_redirigido_al_login(self):

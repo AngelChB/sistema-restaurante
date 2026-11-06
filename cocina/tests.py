@@ -1,3 +1,5 @@
+from caja.models import Pago
+from pedidos.models import DetallePedido
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
@@ -48,9 +50,16 @@ class CocinaViewsTests(TestCase):
         self.mesa = Mesa.objects.create(numero=1, capacidad=4)
 
     def _crear_pedido(self, estado):
-        return Pedido.objects.create(
-            mesa=self.mesa, mesero=self.user, estado=estado
-        )
+        if estado != Pedido.Estado.PAGADO:
+            return Pedido.objects.create(mesa=self.mesa, mesero=self.user, estado=estado)
+        pedido = Pedido.objects.create(mesa=self.mesa, mesero=self.user)
+        DetallePedido.objects.create(pedido=pedido, producto=self.producto, cantidad=1)
+        pedido.estado = Pedido.Estado.ENTREGADO
+        pedido.save()
+        Pago.objects.create(pedido=pedido, cajero=self.user, metodo='EFECTIVO',
+                            monto=pedido.total, monto_recibido=pedido.total)
+        pedido.refresh_from_db()
+        return pedido
 
     def _crear_pedido_abierto_con_detalle(self, cantidad=1):
         pedido = self._crear_pedido(Pedido.Estado.ABIERTO)

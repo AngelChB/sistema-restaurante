@@ -35,7 +35,7 @@ class EmpleadoCrearForm(UserCreationForm):
 
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email')
+        fields = ('username', 'first_name', 'last_name', 'email', 'is_active')
         labels = {
             'username': 'Nombre de usuario',
             'first_name': 'Nombres',
@@ -89,13 +89,13 @@ class EmpleadoCrearForm(UserCreationForm):
         with transaction.atomic():
             if commit:
                 user.save()
-            PerfilEmpleado.objects.update_or_create(
-                usuario=user,
-                defaults={
-                    'rol': self.cleaned_data.get('rol') or PerfilEmpleado.Rol.MESERO,
-                    'telefono': self.cleaned_data.get('telefono', ''),
-                },
-            )
+                PerfilEmpleado.objects.update_or_create(
+                    usuario=user,
+                    defaults={
+                        'rol': self.cleaned_data.get('rol') or PerfilEmpleado.Rol.MESERO,
+                        'telefono': self.cleaned_data.get('telefono', ''),
+                    },
+                )
         return user
 
 
@@ -119,13 +119,13 @@ class EmpleadoEditarForm(forms.ModelForm):
     is_staff = forms.BooleanField(
         required=False,
         label='Es staff',
-        help_text='Otorga acceso al panel de personal y al administrador de Django.',
+        help_text='Permite entrar al administrador de Django según los permisos asignados. El panel de personal depende del rol.',
         widget=forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
     )
 
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'email', 'is_active')
+        fields = ('first_name', 'last_name', 'email', 'is_active', 'is_staff')
         labels = {
             'first_name': 'Nombres',
             'last_name': 'Apellidos',

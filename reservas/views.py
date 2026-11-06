@@ -1,3 +1,6 @@
+from core.paginacion import paginar
+from django.db import transaction
+from core.filtros import filtro_id, filtro_fecha
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Q
@@ -35,7 +38,7 @@ def lista_clientes(request):
         clientes = clientes.filter(activo=False)
 
     return render(request, 'reservas/lista_clientes.html', {
-        'clientes': clientes,
+        'clientes': paginar(request, clientes),
         'buscar': buscar,
         'estado': estado,
     })
@@ -77,7 +80,7 @@ def editar_cliente(request, pk):
 @rol_requerido(*ROLES_RESERVAS_VER)
 def lista_reservas(request):
     estado = request.GET.get('estado', '')
-    fecha = request.GET.get('fecha', '')
+    fecha = filtro_fecha(request, 'fecha')
     buscar = request.GET.get('buscar', '').strip()
 
     reservas = Reserva.objects.select_related('cliente', 'mesa', 'usuario')
@@ -94,7 +97,7 @@ def lista_reservas(request):
         )
 
     return render(request, 'reservas/lista_reservas.html', {
-        'reservas': reservas,
+        'reservas': paginar(request, reservas),
         'estado': estado,
         'fecha': fecha,
         'buscar': buscar,
@@ -164,8 +167,9 @@ def detalle_reserva(request, pk):
     })
 
 
+@transaction.atomic
 def _transicionar_reserva(request, pk, nuevo_estado):
-    reserva = get_object_or_404(Reserva, pk=pk)
+    reserva = get_object_or_404(Reserva.objects.select_for_update(), pk=pk)
     if nuevo_estado not in Reserva.TRANSICIONES.get(reserva.estado, []):
         messages.error(
             request,

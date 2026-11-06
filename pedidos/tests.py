@@ -57,8 +57,12 @@ class PedidoModelTests(TestCase):
 
     def test_pedido_pagado_cambia_la_mesa_a_libre(self):
         pedido = self._crear_pedido()
-        pedido.estado = Pedido.Estado.PAGADO
+        DetallePedido.objects.create(pedido=pedido, producto=self.producto, cantidad=1)
+        pedido.estado = Pedido.Estado.ENTREGADO
         pedido.save()
+        from caja.models import Pago
+        Pago.objects.create(pedido=pedido, cajero=self.mesero, metodo='EFECTIVO',
+                            monto=pedido.total, monto_recibido=pedido.total)
         self.mesa.refresh_from_db()
         self.assertEqual(self.mesa.estado, Mesa.Estado.LIBRE)
 

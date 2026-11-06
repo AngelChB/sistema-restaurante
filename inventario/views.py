@@ -1,4 +1,6 @@
-from datetime import datetime
+from core.paginacion import paginar
+from core.filtros import filtro_id, filtro_fecha
+from core.fechas import parsear_fecha
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
@@ -53,7 +55,7 @@ def panel_inventario(request):
 @rol_requerido(*ROLES_VER)
 def lista_ingredientes(request):
     buscar = request.GET.get('buscar', '').strip()
-    unidad_id = request.GET.get('unidad', '')
+    unidad_id = filtro_id(request, 'unidad')
     stock = request.GET.get('stock', '')
 
     ingredientes = Ingrediente.objects.select_related('unidad_medida').annotate(
@@ -146,10 +148,10 @@ def registrar_movimiento(request):
 
 @rol_requerido(*ROLES_VER)
 def historial_movimientos(request):
-    ingrediente_id = request.GET.get('ingrediente', '')
+    ingrediente_id = filtro_id(request, 'ingrediente')
     tipo = request.GET.get('tipo', '')
-    fecha_desde = request.GET.get('fecha_desde', '')
-    fecha_hasta = request.GET.get('fecha_hasta', '')
+    fecha_desde = filtro_fecha(request, 'fecha_desde')
+    fecha_hasta = filtro_fecha(request, 'fecha_hasta')
 
     movimientos = MovimientoInventario.objects.select_related(
         'ingrediente__unidad_medida', 'pedido', 'compra', 'usuario'
@@ -158,10 +160,10 @@ def historial_movimientos(request):
         movimientos = movimientos.filter(ingrediente_id=ingrediente_id)
     if tipo:
         movimientos = movimientos.filter(tipo=tipo)
-    fecha_desde_dt = _parse_fecha(fecha_desde)
+    fecha_desde_dt = parsear_fecha(fecha_desde)
     if fecha_desde_dt is not None:
         movimientos = movimientos.filter(fecha_creacion__date__gte=fecha_desde_dt)
-    fecha_hasta_dt = _parse_fecha(fecha_hasta)
+    fecha_hasta_dt = parsear_fecha(fecha_hasta)
     if fecha_hasta_dt is not None:
         movimientos = movimientos.filter(fecha_creacion__date__lte=fecha_hasta_dt)
 
@@ -169,7 +171,7 @@ def historial_movimientos(request):
     ingredientes = Ingrediente.objects.filter(activo=True).order_by('nombre')
 
     return render(request, 'inventario/historial_movimientos.html', {
-        'movimientos': movimientos,
+        'movimientos': paginar(request, movimientos),
         'ingredientes': ingredientes,
         'tipos': MovimientoInventario.Tipo.choices,
         'ingrediente_id': ingrediente_id,
@@ -177,15 +179,6 @@ def historial_movimientos(request):
         'fecha_desde': fecha_desde,
         'fecha_hasta': fecha_hasta,
     })
-
-
-def _parse_fecha(valor):
-    if not valor:
-        return None
-    try:
-        return datetime.strptime(valor, '%Y-%m-%d').date()
-    except ValueError:
-        return None
 
 
 @rol_requerido(*ROLES_VER)
@@ -232,7 +225,7 @@ def editar_unidad(request, pk):
 @rol_requerido(*ROLES_VER)
 def lista_recetas(request):
     buscar = request.GET.get('buscar', '').strip()
-    categoria_id = request.GET.get('categoria', '')
+    categoria_id = filtro_id(request, 'categoria')
 
     recetas = RecetaProducto.objects.select_related(
         'producto__categoria', 'ingrediente__unidad_medida'

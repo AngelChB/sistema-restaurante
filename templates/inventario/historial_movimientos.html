@@ -80,7 +80,7 @@
                         <td>{{ movimiento.stock_resultante|floatformat:"3u" }}</td>
                         <td>{{ movimiento.motivo }}</td>
                         <td>{{ movimiento.referencia|default:'—' }}</td>
-                        <td>{{ movimiento.usuario.get_full_name|default:movimiento.usuario.username }}</td>
+                        <td>{% if movimiento.usuario %}{{ movimiento.usuario.get_full_name|default:movimiento.usuario.username }}{% else %}Sin usuario{% endif %}</td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -89,4 +89,5 @@
 {% else %}
     <p class="empty">No se encontraron movimientos con los filtros aplicados.</p>
 {% endif %}
+{% include "componentes/paginacion.html" with pagina=movimientos %}
 {% endblock %}

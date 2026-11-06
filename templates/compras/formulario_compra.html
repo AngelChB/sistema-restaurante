@@ -9,7 +9,7 @@
 </div>
 
 <div class="form-card form-card-wide">
-    <form method="post" id="compra-form" novalidate>
+    <form method="post" id="compra-form" data-formset novalidate>
         {% csrf_token %}
 
         {% if form.non_field_errors %}
@@ -118,5 +118,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{% static 'js/compras.js' %}"></script>
+<script src="{% static 'js/formset.js' %}"></script>
 {% endblock %}

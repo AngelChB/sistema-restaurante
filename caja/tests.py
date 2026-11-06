@@ -37,11 +37,13 @@ class PagoModelTests(TestCase):
         pedido = Pedido.objects.create(
             mesa=self.mesa,
             mesero=self.mesero,
-            estado=Pedido.Estado.ENTREGADO,
+            estado=Pedido.Estado.ABIERTO,
         )
         DetallePedido.objects.create(
             pedido=pedido, producto=self.producto, cantidad=cantidad
         )
+        pedido.estado = Pedido.Estado.ENTREGADO
+        pedido.save()
         return pedido
 
     def test_el_pago_cambia_el_pedido_a_pagado_y_libera_la_mesa(self):
@@ -78,11 +80,13 @@ class PagoModelTests(TestCase):
             pedido = Pedido.objects.create(
                 mesa=self.mesa,
                 mesero=self.mesero,
-                estado=Pedido.Estado.ENTREGADO,
+                estado=Pedido.Estado.ABIERTO,
             )
             DetallePedido.objects.create(
                 pedido=pedido, producto=self.producto, cantidad=1
             )
+            pedido.estado = Pedido.Estado.ENTREGADO
+            pedido.save()
             pago = Pago.objects.create(
                 pedido=pedido,
                 cajero=self.cajero,
@@ -182,11 +186,13 @@ class CajaViewsTests(TestCase):
         pedido = Pedido.objects.create(
             mesa=mesa,
             mesero=self.mesero,
-            estado=Pedido.Estado.ENTREGADO,
+            estado=Pedido.Estado.ABIERTO,
         )
         DetallePedido.objects.create(
             pedido=pedido, producto=self.producto, cantidad=cantidad
         )
+        pedido.estado = Pedido.Estado.ENTREGADO
+        pedido.save()
         return pedido
 
     def _crear_pago(self, pedido, metodo=Pago.Metodo.EFECTIVO):
@@ -394,11 +400,13 @@ class CierreCajaTests(TestCase):
         pedido = Pedido.objects.create(
             mesa=self.mesa,
             mesero=self.mesero,
-            estado=Pedido.Estado.ENTREGADO,
+            estado=Pedido.Estado.ABIERTO,
         )
         DetallePedido.objects.create(
             pedido=pedido, producto=self.producto, cantidad=cantidad
         )
+        pedido.estado = Pedido.Estado.ENTREGADO
+        pedido.save()
         return pedido
 
     def _crear_pago(self, pedido, metodo=Pago.Metodo.EFECTIVO):

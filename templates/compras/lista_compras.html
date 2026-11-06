@@ -69,4 +69,5 @@
 {% else %}
     <p class="empty">No se encontraron compras con los filtros aplicados.</p>
 {% endif %}
+{% include "componentes/paginacion.html" with pagina=compras %}
 {% endblock %}

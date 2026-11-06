@@ -4,6 +4,11 @@
 {% block title %}Panel de cocina | Restaurante{% endblock %}
 
 {% block content %}
+<div class="panel-controles">
+    <button type="button" class="btn btn-secondary btn-small" id="alternar-actualizacion" aria-pressed="false">Pausar actualización</button>
+    <span id="estado-actualizacion" role="status" aria-live="polite">Actualización automática cada 15 segundos.</span>
+</div>
+<div data-panel-live>
 <div class="page-header">
     <h1>Panel de cocina</h1>
     <p class="help-text">Actualizado a las {{ hora_actual|date:'H:i' }}</p>
@@ -110,8 +115,9 @@
         {% endfor %}
     </section>
 </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-<script src="{% static 'js/cocina.js' %}"></script>
+<script src="{% static 'js/panel-live.js' %}"></script>
 {% endblock %}

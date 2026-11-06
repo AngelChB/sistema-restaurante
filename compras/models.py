@@ -87,9 +87,26 @@ class Compra(models.Model):
         self.validate()
 
     def save(self, *args, **kwargs):
+        desde_recepcion = kwargs.pop('_desde_recepcion', False)
         with transaction.atomic():
+            anterior = None
+            if self.pk:
+                anterior = Compra.objects.select_for_update().get(pk=self.pk)
+                if anterior.estado != self.Estado.BORRADOR:
+                    raise ValidationError('No se puede modificar una compra finalizada.')
+            if self.estado == self.Estado.RECIBIDA and not desde_recepcion:
+                raise ValidationError('Utiliza la recepción de compras para actualizar el inventario.')
+            if anterior is None and self.estado != self.Estado.BORRADOR:
+                raise ValidationError('Las compras nuevas deben estar en borrador.')
             self.validate()
             super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        with transaction.atomic():
+            actual = Compra.objects.select_for_update().get(pk=self.pk)
+            if actual.estado != self.Estado.BORRADOR:
+                raise ValidationError('No se puede eliminar una compra finalizada.')
+            return super().delete(*args, **kwargs)
 
 
 class DetalleCompra(models.Model):
@@ -134,6 +151,21 @@ class DetalleCompra(models.Model):
                 'costo_unitario': 'El costo unitario no puede ser negativo.'
             })
 
+    def _bloquear_compras_finalizadas(self):
+        ids = {self.compra_id}
+        if self.pk:
+            ids.add(DetalleCompra.objects.values_list('compra_id', flat=True).get(pk=self.pk))
+        compras = list(Compra.objects.select_for_update().filter(pk__in=ids).order_by('pk'))
+        if any(c.estado != Compra.Estado.BORRADOR for c in compras):
+            raise ValidationError('Solo se pueden cambiar detalles de compras en borrador.')
+
     def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
+        with transaction.atomic():
+            self._bloquear_compras_finalizadas()
+            self.full_clean()
+            super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        with transaction.atomic():
+            self._bloquear_compras_finalizadas()
+            return super().delete(*args, **kwargs)
